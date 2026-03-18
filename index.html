@@ -701,6 +701,11 @@
 
         const setNet = (ok, msg) => {
           els.netStatus.textContent = msg;
+          els.netStatus.style.color = ok
+            ? "rgba(255,255,255,0.68)"
+            : "rgba(251,113,133,0.9)";
+        };
+
         const setAuthStatus = () => {
           if (state.token) {
             els.authStatus.textContent = "로그인됨";
@@ -709,11 +714,6 @@
             els.authStatus.textContent = "로그인 필요";
             els.authStatus.style.color = "rgba(251,113,133,0.9)";
           }
-        };
-
-          els.netStatus.style.color = ok
-            ? "rgba(255,255,255,0.68)"
-            : "rgba(251,113,133,0.9)";
         };
 
         const render = () => {

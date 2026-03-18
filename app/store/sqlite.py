@@ -50,10 +50,17 @@ class SqliteTodoStore:
                         description TEXT,
                         done INTEGER NOT NULL DEFAULT 0,
                         created_at TEXT NOT NULL,
-                        updated_at TEXT NOT NULL
+                        updated_at TEXT NOT NULL,
+                        user_id INTEGER
                     )
                     """
                 )
+                # 기존 DB에 user_id 컬럼이 없을 수 있으므로 보강
+                try:
+                    conn.execute("ALTER TABLE todos ADD COLUMN user_id INTEGER")
+                except sqlite3.OperationalError:
+                    # 이미 존재하거나 테이블이 없으면 무시
+                    pass
                 conn.commit()
             finally:
                 conn.close()
@@ -68,39 +75,40 @@ class SqliteTodoStore:
             updated_at=_parse_iso(row[5]),
         )
 
-    def list(self) -> List[TodoRecord]:
+    def list(self, user_id: int) -> List[TodoRecord]:
         with self._lock:
             conn = self._conn()
             try:
                 cur = conn.execute(
-                    "SELECT id, title, description, done, created_at, updated_at FROM todos ORDER BY id"
+                    "SELECT id, title, description, done, created_at, updated_at FROM todos WHERE user_id = ? ORDER BY id",
+                    (user_id,),
                 )
                 return [self._row_to_record(row) for row in cur.fetchall()]
             finally:
                 conn.close()
 
-    def get(self, todo_id: int) -> Optional[TodoRecord]:
+    def get(self, todo_id: int, user_id: int) -> Optional[TodoRecord]:
         with self._lock:
             conn = self._conn()
             try:
                 cur = conn.execute(
-                    "SELECT id, title, description, done, created_at, updated_at FROM todos WHERE id = ?",
-                    (todo_id,),
+                    "SELECT id, title, description, done, created_at, updated_at FROM todos WHERE id = ? AND user_id = ?",
+                    (todo_id, user_id),
                 )
                 row = cur.fetchone()
                 return self._row_to_record(row) if row else None
             finally:
                 conn.close()
 
-    def create(self, title: str, description: Optional[str]) -> TodoRecord:
+    def create(self, title: str, description: Optional[str], user_id: int) -> TodoRecord:
         now = _now()
         now_str = _iso(now)
         with self._lock:
             conn = self._conn()
             try:
                 cur = conn.execute(
-                    "INSERT INTO todos (title, description, done, created_at, updated_at) VALUES (?, ?, 0, ?, ?)",
-                    (title, description or "", now_str, now_str),
+                    "INSERT INTO todos (title, description, done, created_at, updated_at, user_id) VALUES (?, ?, 0, ?, ?, ?)",
+                    (title, description or "", now_str, now_str, user_id),
                 )
                 conn.commit()
                 todo_id = cur.lastrowid
@@ -122,13 +130,14 @@ class SqliteTodoStore:
         title: Optional[str] = None,
         description: Optional[str] = None,
         done: Optional[bool] = None,
+        user_id: int,
     ) -> Optional[TodoRecord]:
         with self._lock:
             conn = self._conn()
             try:
                 cur = conn.execute(
-                    "SELECT id, title, description, done, created_at, updated_at FROM todos WHERE id = ?",
-                    (todo_id,),
+                    "SELECT id, title, description, done, created_at, updated_at FROM todos WHERE id = ? AND user_id = ?",
+                    (todo_id, user_id),
                 )
                 row = cur.fetchone()
                 if not row:
@@ -141,8 +150,8 @@ class SqliteTodoStore:
                 new_updated = _now()
 
                 conn.execute(
-                    "UPDATE todos SET title = ?, description = ?, done = ?, updated_at = ? WHERE id = ?",
-                    (new_title, new_desc or "", 1 if new_done else 0, _iso(new_updated), todo_id),
+                    "UPDATE todos SET title = ?, description = ?, done = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+                    (new_title, new_desc or "", 1 if new_done else 0, _iso(new_updated), todo_id, user_id),
                 )
                 conn.commit()
                 return TodoRecord(
@@ -156,11 +165,11 @@ class SqliteTodoStore:
             finally:
                 conn.close()
 
-    def delete(self, todo_id: int) -> bool:
+    def delete(self, todo_id: int, user_id: int) -> bool:
         with self._lock:
             conn = self._conn()
             try:
-                cur = conn.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
+                cur = conn.execute("DELETE FROM todos WHERE id = ? AND user_id = ?", (todo_id, user_id))
                 conn.commit()
                 return cur.rowcount > 0
             finally:

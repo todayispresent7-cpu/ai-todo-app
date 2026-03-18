@@ -20,6 +20,7 @@ class TodoRecord:
     done: bool
     created_at: datetime
     updated_at: datetime
+    user_id: Optional[int] = None
 
 
 class InMemoryTodoStore:
@@ -34,16 +35,23 @@ class InMemoryTodoStore:
         self._next_id = 1
         self._todos: Dict[int, TodoRecord] = {}
 
-    def list(self) -> List[TodoRecord]:
+    def list(self, user_id: Optional[int] = None) -> List[TodoRecord]:
         with self._lock:
-            # id 오름차순으로 반환
-            return [self._todos[k] for k in sorted(self._todos.keys())]
+            records = [self._todos[k] for k in sorted(self._todos.keys())]
+            if user_id is None:
+                return records
+            return [r for r in records if r.user_id == user_id]
 
-    def get(self, todo_id: int) -> Optional[TodoRecord]:
+    def get(self, todo_id: int, user_id: Optional[int] = None) -> Optional[TodoRecord]:
         with self._lock:
-            return self._todos.get(todo_id)
+            rec = self._todos.get(todo_id)
+            if rec is None:
+                return None
+            if user_id is not None and rec.user_id != user_id:
+                return None
+            return rec
 
-    def create(self, title: str, description: Optional[str]) -> TodoRecord:
+    def create(self, title: str, description: Optional[str], user_id: Optional[int] = None) -> TodoRecord:
         with self._lock:
             todo_id = self._next_id
             self._next_id += 1
@@ -55,6 +63,7 @@ class InMemoryTodoStore:
                 done=False,
                 created_at=now,
                 updated_at=now,
+                user_id=user_id,
             )
             self._todos[todo_id] = rec
             return rec
@@ -66,10 +75,13 @@ class InMemoryTodoStore:
         title: Optional[str] = None,
         description: Optional[str] = None,
         done: Optional[bool] = None,
+        user_id: Optional[int] = None,
     ) -> Optional[TodoRecord]:
         with self._lock:
             rec = self._todos.get(todo_id)
             if rec is None:
+                return None
+            if user_id is not None and rec.user_id != user_id:
                 return None
 
             changed = False
@@ -87,8 +99,13 @@ class InMemoryTodoStore:
                 rec.updated_at = _now()
             return rec
 
-    def delete(self, todo_id: int) -> bool:
+    def delete(self, todo_id: int, user_id: Optional[int] = None) -> bool:
         with self._lock:
+            rec = self._todos.get(todo_id)
+            if rec is None:
+                return False
+            if user_id is not None and rec.user_id != user_id:
+                return False
             return self._todos.pop(todo_id, None) is not None
 
 

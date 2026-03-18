@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app.api.todos import router as todos_router
+from app.api.auth import router as auth_router
 from pathlib import Path
 
 
@@ -43,6 +44,7 @@ def create_app() -> FastAPI:
         return FileResponse(index_path)
 
     # 라우터 등록
+    app.include_router(auth_router)
     app.include_router(todos_router)
     return app
 

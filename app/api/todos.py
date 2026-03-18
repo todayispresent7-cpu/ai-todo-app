@@ -2,11 +2,13 @@ import os
 import re
 
 import google.generativeai as genai
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.api.auth import get_current_user
 from app.models.todo import TodoCreate, TodoOut, TodoUpdate
 from app.store.sqlite import todo_store
+from app.store.user_sqlite import UserRecord
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -33,35 +35,40 @@ def _to_out(rec) -> TodoOut:
 
 
 @router.get("", response_model=list[TodoOut])
-def list_todos():
-    # 전체 할 일 목록 조회
-    return [_to_out(r) for r in todo_store.list()]
+def list_todos(current_user: UserRecord = Depends(get_current_user)):
+    # 현재 사용자 할 일 목록 조회
+    return [_to_out(r) for r in todo_store.list(user_id=current_user.id)]
 
 
 @router.post("", response_model=TodoOut, status_code=status.HTTP_201_CREATED)
-def create_todo(payload: TodoCreate):
-    # 할 일 생성
-    rec = todo_store.create(title=payload.title, description=payload.description)
+def create_todo(payload: TodoCreate, current_user: UserRecord = Depends(get_current_user)):
+    # 할 일 생성 (현재 사용자)
+    rec = todo_store.create(
+        title=payload.title,
+        description=payload.description,
+        user_id=current_user.id,
+    )
     return _to_out(rec)
 
 
 @router.get("/{todo_id}", response_model=TodoOut)
-def get_todo(todo_id: int):
-    # 할 일 단건 조회
-    rec = todo_store.get(todo_id)
+def get_todo(todo_id: int, current_user: UserRecord = Depends(get_current_user)):
+    # 할 일 단건 조회 (현재 사용자)
+    rec = todo_store.get(todo_id, user_id=current_user.id)
     if rec is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
     return _to_out(rec)
 
 
 @router.patch("/{todo_id}", response_model=TodoOut)
-def update_todo(todo_id: int, payload: TodoUpdate):
-    # 할 일 부분 수정 (제목/설명/완료 여부)
+def update_todo(todo_id: int, payload: TodoUpdate, current_user: UserRecord = Depends(get_current_user)):
+    # 할 일 부분 수정 (제목/설명/완료 여부) - 현재 사용자
     rec = todo_store.update(
         todo_id,
         title=payload.title,
         description=payload.description,
         done=payload.done,
+        user_id=current_user.id,
     )
     if rec is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
@@ -69,9 +76,9 @@ def update_todo(todo_id: int, payload: TodoUpdate):
 
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_todo(todo_id: int):
-    # 할 일 삭제
-    ok = todo_store.delete(todo_id)
+def delete_todo(todo_id: int, current_user: UserRecord = Depends(get_current_user)):
+    # 할 일 삭제 (현재 사용자)
+    ok = todo_store.delete(todo_id, user_id=current_user.id)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
     return None

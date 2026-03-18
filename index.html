@@ -449,7 +449,7 @@
         <div class="title">
           <h1>Todo</h1>
           <div class="subtitle">
-            FastAPI Todo API 연결 프론트엔드 · 목록/추가/완료/삭제
+            FastAPI Todo API 연결 프론트엔드 · 로그인 후 내 할 일만 보기
           </div>
         </div>
 
@@ -460,6 +460,53 @@
       </header>
 
       <div class="grid">
+        <section class="card" aria-label="인증">
+          <div class="card-h">
+            <h2>로그인 / 회원가입</h2>
+            <div class="stats" id="authStatus">로그인 필요</div>
+          </div>
+          <div class="card-b">
+            <div class="field">
+              <label for="username">아이디</label>
+              <input
+                id="username"
+                name="username"
+                placeholder="아이디를 입력하세요"
+                maxlength="50"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="password">비밀번호</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="비밀번호 (최소 6자)"
+                minlength="6"
+                maxlength="128"
+                required
+              />
+            </div>
+            <div class="row">
+              <div class="btns">
+                <button class="primary" type="button" id="loginBtn">
+                  로그인
+                </button>
+                <button type="button" id="registerBtn">
+                  회원가입
+                </button>
+                <button class="ghost" type="button" id="logoutBtn">
+                  로그아웃
+                </button>
+              </div>
+              <div class="hint">
+                로그인 후에만 할 일을 조회/추가/수정/삭제할 수 있습니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="card">
           <div class="card-h">
             <h2>새 할 일</h2>
@@ -551,10 +598,12 @@
       (() => {
         const DEFAULT_API_BASE = "https://ai-todo-app-production-ca99.up.railway.app";
         const LS_API_BASE = "todo_api_base_v1";
+        const LS_TOKEN = "todo_jwt_token_v1";
 
         const els = {
           apiBase: document.getElementById("apiBase"),
           netStatus: document.getElementById("netStatus"),
+          authStatus: document.getElementById("authStatus"),
           createForm: document.getElementById("createForm"),
           title: document.getElementById("title"),
           description: document.getElementById("description"),
@@ -569,6 +618,11 @@
           toastTitle: document.getElementById("toastTitle"),
           toastMsg: document.getElementById("toastMsg"),
           toastClose: document.getElementById("toastClose"),
+          username: document.getElementById("username"),
+          password: document.getElementById("password"),
+          loginBtn: document.getElementById("loginBtn"),
+          registerBtn: document.getElementById("registerBtn"),
+          logoutBtn: document.getElementById("logoutBtn"),
         };
 
         let state = {
@@ -576,6 +630,7 @@
           loading: false,
           filter: "all",
           apiBase: DEFAULT_API_BASE,
+          token: null,
         };
 
         const fmtDate = (iso) => {
@@ -615,6 +670,9 @@
             { "Content-Type": "application/json" },
             opts.headers || {}
           );
+          if (state.token) {
+            headers["Authorization"] = `Bearer ${state.token}`;
+          }
           const res = await fetch(url, { ...opts, headers });
           if (!res.ok) {
             let detail = "";
@@ -643,6 +701,16 @@
 
         const setNet = (ok, msg) => {
           els.netStatus.textContent = msg;
+        const setAuthStatus = () => {
+          if (state.token) {
+            els.authStatus.textContent = "로그인됨";
+            els.authStatus.style.color = "rgba(45,212,191,0.9)";
+          } else {
+            els.authStatus.textContent = "로그인 필요";
+            els.authStatus.style.color = "rgba(251,113,133,0.9)";
+          }
+        };
+
           els.netStatus.style.color = ok
             ? "rgba(255,255,255,0.68)"
             : "rgba(251,113,133,0.9)";
@@ -730,6 +798,13 @@
         const loadTodos = async () => {
           state.loading = true;
           els.refreshBtn.disabled = true;
+          if (!state.token) {
+            els.stats.textContent = "0개";
+            els.list.innerHTML = "";
+            els.emptyHint.style.display = "block";
+            setNet(false, "로그인 필요");
+            return;
+          }
           try {
             const todos = await api("/todos", { method: "GET" });
             state.todos = Array.isArray(todos) ? todos : [];
@@ -751,6 +826,10 @@
 
         const onCreate = async (ev) => {
           ev.preventDefault();
+          if (!state.token) {
+            toast("로그인이 필요합니다", "할 일을 추가하려면 먼저 로그인 해주세요.");
+            return;
+          }
           const title = els.title.value.trim();
           const descriptionRaw = els.description.value.trim();
           const description = descriptionRaw.length ? descriptionRaw : null;
@@ -774,6 +853,10 @@
         };
 
         const onAiSteps = async () => {
+          if (!state.token) {
+            toast("로그인이 필요합니다", "AI 단계를 생성하려면 먼저 로그인 해주세요.");
+            return;
+          }
           const title = els.title.value.trim();
           if (!title) {
             toast("제목이 필요해요", "먼저 제목을 입력한 뒤 AI 단계를 생성해보세요.");
@@ -806,6 +889,10 @@
         };
 
         const onToggle = async (todo) => {
+          if (!state.token) {
+            toast("로그인이 필요합니다", "완료 상태를 변경하려면 먼저 로그인 해주세요.");
+            return;
+          }
           const nextDone = !todo.done;
           // optimistic update
           const prev = state.todos.slice();
@@ -829,6 +916,10 @@
         };
 
         const onDelete = async (todo) => {
+          if (!state.token) {
+            toast("로그인이 필요합니다", "삭제하려면 먼저 로그인 해주세요.");
+            return;
+          }
           const ok = confirm(`삭제할까요?\n\n#${todo.id} ${todo.title}`);
           if (!ok) return;
 
@@ -854,11 +945,80 @@
           }
         };
 
+        const doLogin = async () => {
+          const username = els.username.value.trim();
+          const password = els.password.value;
+          if (!username || !password) {
+            toast("입력이 필요합니다", "아이디와 비밀번호를 모두 입력해 주세요.");
+            return;
+          }
+          els.loginBtn.disabled = true;
+          try {
+            const body = new URLSearchParams();
+            body.set("username", username);
+            body.set("password", password);
+            body.set("grant_type", "password");
+            const url = state.apiBase + "/auth/login";
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body,
+            });
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}`);
+            }
+            const data = await res.json();
+            state.token = data.access_token;
+            localStorage.setItem(LS_TOKEN, state.token);
+            setAuthStatus();
+            toast("로그인 성공", `${username}님 환영합니다.`);
+            await checkHealth().finally(loadTodos);
+          } catch (e) {
+            toast("로그인 실패", String(e?.message || e));
+          } finally {
+            els.loginBtn.disabled = false;
+          }
+        };
+
+        const doRegister = async () => {
+          const username = els.username.value.trim();
+          const password = els.password.value;
+          if (!username || !password) {
+            toast("입력이 필요합니다", "아이디와 비밀번호를 모두 입력해 주세요.");
+            return;
+          }
+          els.registerBtn.disabled = true;
+          try {
+            await api("/auth/register", {
+              method: "POST",
+              body: JSON.stringify({ username, password }),
+            });
+            toast("회원가입 완료", "이제 같은 아이디와 비밀번호로 로그인해 주세요.");
+          } catch (e) {
+            toast("회원가입 실패", String(e?.message || e));
+          } finally {
+            els.registerBtn.disabled = false;
+          }
+        };
+
+        const doLogout = () => {
+          state.token = null;
+          localStorage.removeItem(LS_TOKEN);
+          setAuthStatus();
+          els.list.innerHTML = "";
+          els.stats.textContent = "0개";
+          els.emptyHint.style.display = "block";
+          toast("로그아웃 완료", "다시 로그인하면 내 할 일을 볼 수 있습니다.");
+        };
+
         // wire up
         els.toastClose.addEventListener("click", hideToast);
         els.createForm.addEventListener("submit", onCreate);
         els.aiStepsBtn.addEventListener("click", onAiSteps);
         els.refreshBtn.addEventListener("click", loadTodos);
+        els.loginBtn.addEventListener("click", doLogin);
+        els.registerBtn.addEventListener("click", doRegister);
+        els.logoutBtn.addEventListener("click", doLogout);
         els.filter.addEventListener("change", (e) => {
           state.filter = e.target.value;
           render();
@@ -868,6 +1028,8 @@
         const savedBase = localStorage.getItem(LS_API_BASE);
         state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
         els.apiBase.value = state.apiBase;
+        state.token = localStorage.getItem(LS_TOKEN);
+        setAuthStatus();
 
         const applyApiBase = () => {
           const v = sanitizeBase(els.apiBase.value);

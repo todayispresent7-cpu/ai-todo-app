@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.api.todos import router as todos_router
+from pathlib import Path
 
 
 def create_app() -> FastAPI:
@@ -27,6 +30,17 @@ def create_app() -> FastAPI:
     def health():
         # 운영 환경에서는 DB 연결 상태 등을 함께 점검할 수 있습니다.
         return {"status": "ok"}
+
+    @app.get("/", include_in_schema=False)
+    def index():
+        project_root = Path(__file__).resolve().parents[1]
+        index_path = project_root / "index.html"
+        if not index_path.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail=f"index.html not found at {index_path}",
+            )
+        return FileResponse(index_path)
 
     # 라우터 등록
     app.include_router(todos_router)

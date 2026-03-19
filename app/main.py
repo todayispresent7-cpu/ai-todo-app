@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,15 +8,22 @@ from fastapi.responses import FileResponse
 from app.api.todos import router as todos_router
 from app.api.auth import router as auth_router
 from app.api.admin import router as admin_router
+from app.db import init_db
 from pathlib import Path
 
 
 def create_app() -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        await init_db()
+        yield
+
     # FastAPI 앱 생성 (제목/설명은 문서에 표시됩니다)
     app = FastAPI(
         title="할 일 목록(TO-DO) REST API",
         description="FastAPI로 만든 간단한 할 일 목록 CRUD API 예제입니다.",
         version="1.0.0",
+        lifespan=lifespan,
     )
 
     # 정적 파일(file://)에서 접근하는 순수 프론트엔드를 위해 CORS 허용

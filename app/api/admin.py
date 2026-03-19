@@ -4,18 +4,20 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import case, delete, func, select
 
 from app.api.auth import get_current_user
+from app.db import get_db
+from app.db_models import Todo, User
 from app.models.todo import TodoOut
 from app.models.user import UserOut
-from app.store.sqlite import todo_store
-from app.store.user_sqlite import UserRecord, user_store
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user)) -> UserRecord:
+def _require_admin(current_user=Depends(get_current_user)) -> User:
     if current_user.username != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -58,20 +60,32 @@ class AdminStatsOut(BaseModel):
 
 
 @router.get("/users", response_model=list[AdminUserRow])
-def admin_list_users(_: UserRecord = Depends(_require_admin)):
-    users = user_store.list()
+async def admin_list_users(
+    _: User = Depends(_require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    todo_total = func.count(Todo.id)
+    todo_done = func.coalesce(func.sum(case((Todo.done.is_(True), 1), else_=0)), 0)
+    stmt = (
+        select(User.id, User.username, User.created_at, todo_total, todo_done)
+        .select_from(User)
+        .outerjoin(Todo, Todo.user_id == User.id)
+        .group_by(User.id)
+        .order_by(User.id)
+    )
+    rows = (await db.execute(stmt)).all()
     out: list[AdminUserRow] = []
-    for u in users:
-        total = todo_store.count_by_user(u.id)
-        done = todo_store.count_done_by_user(u.id)
-        rate = (done / total) if total else 0.0
+    for (uid, username, created_at, total, done) in rows:
+        total_i = int(total or 0)
+        done_i = int(done or 0)
+        rate = (done_i / total_i) if total_i else 0.0
         out.append(
             AdminUserRow(
-                id=u.id,
-                username=u.username,
-                created_at=u.created_at,
-                todo_total=total,
-                todo_done=done,
+                id=int(uid),
+                username=str(username),
+                created_at=created_at,
+                todo_total=total_i,
+                todo_done=done_i,
                 todo_done_rate=rate,
             )
         )
@@ -79,12 +93,17 @@ def admin_list_users(_: UserRecord = Depends(_require_admin)):
 
 
 @router.get("/users/{user_id}/todos", response_model=AdminUserTodosOut)
-def admin_get_user_todos(user_id: int, _: UserRecord = Depends(_require_admin)):
-    u = user_store.get(user_id)
+async def admin_get_user_todos(
+    user_id: int,
+    _: User = Depends(_require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    u = await db.get(User, user_id)
     if not u:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
-    todos = [_todo_to_out(r) for r in todo_store.list(user_id=user_id)]
+    todo_rows = await db.scalars(select(Todo).where(Todo.user_id == user_id).order_by(Todo.id))
+    todos = [_todo_to_out(r) for r in list(todo_rows)]
     total = len(todos)
     done = len([t for t in todos if t.done])
     rate = (done / total) if total else 0.0
@@ -102,8 +121,12 @@ def admin_get_user_todos(user_id: int, _: UserRecord = Depends(_require_admin)):
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def admin_delete_user(user_id: int, _: UserRecord = Depends(_require_admin)):
-    u = user_store.get(user_id)
+async def admin_delete_user(
+    user_id: int,
+    _: User = Depends(_require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    u = await db.get(User, user_id)
     if not u:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
     if u.username == "admin":
@@ -112,19 +135,21 @@ def admin_delete_user(user_id: int, _: UserRecord = Depends(_require_admin)):
             detail="admin 계정은 삭제할 수 없습니다.",
         )
 
-    todo_store.delete_by_user(user_id)
-    ok = user_store.delete(user_id)
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="사용자 삭제에 실패했습니다.")
+    await db.delete(u)
+    await db.commit()
     return None
 
 
 @router.get("/stats", response_model=AdminStatsOut)
-def admin_stats(_: UserRecord = Depends(_require_admin)):
-    users = user_store.list()
-    total_users = len(users)
-    total_todos = todo_store.count_all()
-    done_todos = todo_store.count_done()
+async def admin_stats(
+    _: User = Depends(_require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    total_users = int((await db.scalar(select(func.count()).select_from(User))) or 0)
+    total_todos = int((await db.scalar(select(func.count()).select_from(Todo))) or 0)
+    done_todos = int(
+        (await db.scalar(select(func.count()).select_from(Todo).where(Todo.done.is_(True)))) or 0
+    )
     done_rate = (done_todos / total_todos) if total_todos else 0.0
     return AdminStatsOut(
         total_users=total_users,

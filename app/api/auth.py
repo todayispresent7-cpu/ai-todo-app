@@ -6,9 +6,12 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from sqlalchemy import select
 
 from app.models.user import Token, UserCreate, UserLogin, UserOut
-from app.store.user_sqlite import UserRecord, user_store
+from app.db import get_db
+from app.db_models import User
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -47,21 +50,24 @@ def _user_to_out(user: UserRecord) -> UserOut:
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate):
-    existing = user_store.get_by_username(payload.username)
+async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
+    existing = await db.scalar(select(User).where(User.username == payload.username))
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="이미 사용 중인 사용자 이름입니다.",
         )
     password_hash = get_password_hash(payload.password)
-    user = user_store.create(username=payload.username, password_hash=password_hash)
-    return _user_to_out(user)
+    user = User(username=payload.username, password_hash=password_hash)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return UserOut(id=user.id, username=user.username, created_at=user.created_at)
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = user_store.get_by_username(form_data.username)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    user = await db.scalar(select(User).where(User.username == form_data.username))
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,7 +77,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return Token(access_token=access_token, token_type="bearer")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserRecord:
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="인증이 필요합니다.",
@@ -86,7 +95,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserRecord:
     except (JWTError, ValueError):
         raise credentials_exception
 
-    user = user_store.get(user_id)
+    user = await db.get(User, user_id)
     if user is None:
         raise credentials_exception
     return user

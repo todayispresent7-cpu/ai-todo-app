@@ -4,11 +4,13 @@ import re
 import google.generativeai as genai
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from app.api.auth import get_current_user
+from app.db import get_db
+from app.db_models import Todo
 from app.models.todo import TodoCreate, TodoOut, TodoUpdate
-from app.store.sqlite import todo_store
-from app.store.user_sqlite import UserRecord
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -35,52 +37,84 @@ def _to_out(rec) -> TodoOut:
 
 
 @router.get("", response_model=list[TodoOut])
-def list_todos(current_user: UserRecord = Depends(get_current_user)):
+async def list_todos(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     # 현재 사용자 할 일 목록 조회
-    return [_to_out(r) for r in todo_store.list(user_id=current_user.id)]
+    rows = await db.scalars(select(Todo).where(Todo.user_id == current_user.id).order_by(Todo.id))
+    return [_to_out(r) for r in list(rows)]
 
 
 @router.post("", response_model=TodoOut, status_code=status.HTTP_201_CREATED)
-def create_todo(payload: TodoCreate, current_user: UserRecord = Depends(get_current_user)):
+async def create_todo(
+    payload: TodoCreate,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     # 할 일 생성 (현재 사용자)
-    rec = todo_store.create(
+    rec = Todo(
         title=payload.title,
         description=payload.description,
+        done=False,
         user_id=current_user.id,
     )
+    db.add(rec)
+    await db.commit()
+    await db.refresh(rec)
     return _to_out(rec)
 
 
 @router.get("/{todo_id}", response_model=TodoOut)
-def get_todo(todo_id: int, current_user: UserRecord = Depends(get_current_user)):
+async def get_todo(
+    todo_id: int,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     # 할 일 단건 조회 (현재 사용자)
-    rec = todo_store.get(todo_id, user_id=current_user.id)
+    rec = await db.scalar(select(Todo).where(Todo.id == todo_id, Todo.user_id == current_user.id))
     if rec is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
     return _to_out(rec)
 
 
 @router.patch("/{todo_id}", response_model=TodoOut)
-def update_todo(todo_id: int, payload: TodoUpdate, current_user: UserRecord = Depends(get_current_user)):
+async def update_todo(
+    todo_id: int,
+    payload: TodoUpdate,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     # 할 일 부분 수정 (제목/설명/완료 여부) - 현재 사용자
-    rec = todo_store.update(
-        todo_id,
-        title=payload.title,
-        description=payload.description,
-        done=payload.done,
-        user_id=current_user.id,
-    )
+    rec = await db.scalar(select(Todo).where(Todo.id == todo_id, Todo.user_id == current_user.id))
     if rec is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
+    if payload.title is not None:
+        rec.title = payload.title
+    if payload.description is not None:
+        rec.description = payload.description
+    if payload.done is not None:
+        rec.done = payload.done
+    from app.db import utcnow
+
+    rec.updated_at = utcnow()
+    await db.commit()
+    await db.refresh(rec)
     return _to_out(rec)
 
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_todo(todo_id: int, current_user: UserRecord = Depends(get_current_user)):
+async def delete_todo(
+    todo_id: int,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     # 할 일 삭제 (현재 사용자)
-    ok = todo_store.delete(todo_id, user_id=current_user.id)
-    if not ok:
+    rec = await db.scalar(select(Todo).where(Todo.id == todo_id, Todo.user_id == current_user.id))
+    if rec is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TODO not found")
+    await db.delete(rec)
+    await db.commit()
     return None
 
 

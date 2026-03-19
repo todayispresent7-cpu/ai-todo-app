@@ -175,6 +175,59 @@ class SqliteTodoStore:
             finally:
                 conn.close()
 
+    def delete_by_user(self, user_id: int) -> int:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute("DELETE FROM todos WHERE user_id = ?", (user_id,))
+                conn.commit()
+                return int(cur.rowcount or 0)
+            finally:
+                conn.close()
+
+    def count_all(self) -> int:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute("SELECT COUNT(*) FROM todos")
+                row = cur.fetchone()
+                return int(row[0] if row else 0)
+            finally:
+                conn.close()
+
+    def count_done(self) -> int:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute("SELECT COUNT(*) FROM todos WHERE done = 1")
+                row = cur.fetchone()
+                return int(row[0] if row else 0)
+            finally:
+                conn.close()
+
+    def count_by_user(self, user_id: int) -> int:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute("SELECT COUNT(*) FROM todos WHERE user_id = ?", (user_id,))
+                row = cur.fetchone()
+                return int(row[0] if row else 0)
+            finally:
+                conn.close()
+
+    def count_done_by_user(self, user_id: int) -> int:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute(
+                    "SELECT COUNT(*) FROM todos WHERE user_id = ? AND done = 1",
+                    (user_id,),
+                )
+                row = cur.fetchone()
+                return int(row[0] if row else 0)
+            finally:
+                conn.close()
+
 
 # 앱 전역에서 사용하는 SQLite 스토어 (서버 재시작 후에도 유지)
 todo_store = SqliteTodoStore()

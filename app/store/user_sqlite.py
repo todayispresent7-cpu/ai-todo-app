@@ -89,6 +89,17 @@ class SqliteUserStore:
             finally:
                 conn.close()
 
+    def list(self) -> list[UserRecord]:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute(
+                    "SELECT id, username, password_hash, created_at FROM users ORDER BY id"
+                )
+                return [self._row_to_user(row) for row in cur.fetchall()]
+            finally:
+                conn.close()
+
     def create(self, username: str, password_hash: str) -> UserRecord:
         now = _now()
         with self._lock:
@@ -106,6 +117,16 @@ class SqliteUserStore:
                     password_hash=password_hash,
                     created_at=now,
                 )
+            finally:
+                conn.close()
+
+    def delete(self, user_id: int) -> bool:
+        with self._lock:
+            conn = self._conn()
+            try:
+                cur = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+                conn.commit()
+                return cur.rowcount > 0
             finally:
                 conn.close()
 

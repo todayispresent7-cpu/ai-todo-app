@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 
 from app.api.todos import router as todos_router
 from app.api.auth import router as auth_router
+from app.api.admin import router as admin_router
 from pathlib import Path
 
 
@@ -43,9 +44,21 @@ def create_app() -> FastAPI:
             )
         return FileResponse(index_path)
 
+    @app.get("/admin", include_in_schema=False)
+    def admin_page():
+        project_root = Path(__file__).resolve().parents[1]
+        admin_path = project_root / "admin.html"
+        if not admin_path.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail=f"admin.html not found at {admin_path}",
+            )
+        return FileResponse(admin_path)
+
     # 라우터 등록
     app.include_router(auth_router)
     app.include_router(todos_router)
+    app.include_router(admin_router)
     return app
 
 

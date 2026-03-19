@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo 관리자</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: rgba(255, 255, 255, 0.06);
+        --card-2: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.68);
+        --muted-2: rgba(255, 255, 255, 0.52);
+        --accent: #7c5cff;
+        --accent-2: #2dd4bf;
+        --danger: #fb7185;
+        --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial,
+          "Helvetica Neue", sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+            800px 420px at 20% 8%,
+            rgba(124, 92, 255, 0.32),
+            transparent 55%
+          ),
+          radial-gradient(
+            700px 400px at 80% 18%,
+            rgba(45, 212, 191, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 480px at 40% 100%,
+            rgba(251, 113, 133, 0.12),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #090d1a 0%, #050815 100%);
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 28px 18px 42px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: -0.3px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+        min-width: 0;
+      }
+
+      .pill label {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .pill input {
+        width: 260px;
+        max-width: 46vw;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      @media (max-width: 980px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .card .card-h {
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .card .card-h h2 {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.86);
+        letter-spacing: -0.2px;
+      }
+
+      .card .card-b {
+        padding: 14px 16px 16px;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .btns {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      button {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+        transition: transform 120ms ease, background 120ms ease,
+          border-color 120ms ease, opacity 120ms ease;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.09);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button.primary {
+        border-color: rgba(124, 92, 255, 0.55);
+        background: linear-gradient(
+          180deg,
+          rgba(124, 92, 255, 0.9),
+          rgba(124, 92, 255, 0.55)
+        );
+      }
+
+      button.primary:hover {
+        border-color: rgba(124, 92, 255, 0.8);
+        background: linear-gradient(
+          180deg,
+          rgba(124, 92, 255, 0.96),
+          rgba(124, 92, 255, 0.6)
+        );
+      }
+
+      button.danger {
+        border-color: rgba(251, 113, 133, 0.55);
+        background: rgba(251, 113, 133, 0.12);
+      }
+
+      button.danger:hover {
+        border-color: rgba(251, 113, 133, 0.75);
+        background: rgba(251, 113, 133, 0.16);
+      }
+
+      button.ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      button.ghost:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.8);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .stats {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 12px 0;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 980px) {
+        .cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 520px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .stat-card {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.14);
+        border-radius: 14px;
+        padding: 12px 12px;
+        display: grid;
+        gap: 6px;
+        min-height: 86px;
+      }
+
+      .stat-k {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .stat-v {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -0.3px;
+      }
+
+      .stat-sub {
+        color: var(--muted-2);
+        font-size: 12px;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.14);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+
+      thead th {
+        text-align: left;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 12, 24, 0.88);
+        backdrop-filter: blur(10px);
+        z-index: 1;
+      }
+
+      tbody td {
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.86);
+        vertical-align: top;
+      }
+
+      tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .linkish {
+        color: rgba(124, 92, 255, 0.95);
+        text-decoration: none;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .linkish:hover {
+        text-decoration: underline;
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 6px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        white-space: nowrap;
+      }
+
+      .badge.ok {
+        border-color: rgba(45, 212, 191, 0.5);
+        background: rgba(45, 212, 191, 0.12);
+        color: rgba(210, 255, 248, 0.88);
+      }
+
+      .badge.warn {
+        border-color: rgba(251, 113, 133, 0.5);
+        background: rgba(251, 113, 133, 0.12);
+        color: rgba(255, 220, 226, 0.92);
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .item {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.14);
+        border-radius: 14px;
+        padding: 12px 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .item-title {
+        font-weight: 900;
+        letter-spacing: -0.2px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .item-desc {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.72);
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.35;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        max-width: min(720px, calc(100vw - 24px));
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(10, 12, 24, 0.82);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        padding: 12px 14px;
+        display: none;
+        gap: 10px;
+        align-items: flex-start;
+        z-index: 9999;
+      }
+
+      .toast.show {
+        display: flex;
+      }
+
+      .toast .t-title {
+        font-weight: 900;
+        font-size: 13px;
+        margin-bottom: 2px;
+      }
+
+      .toast .t-msg {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.78);
+        line-height: 1.3;
+        white-space: pre-wrap;
+      }
+
+      .toast .t-right {
+        margin-left: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <h1>관리자 대시보드</h1>
+          <div class="subtitle">
+            admin 계정으로 로그인한 토큰으로만 접근 가능 · 사용자/할 일 현황 확인
+          </div>
+        </div>
+
+        <div class="pill" title="기본값: https://ai-todo-app-production-ca99.up.railway.app">
+          <label for="apiBase">API</label>
+          <input id="apiBase" type="text" spellcheck="false" />
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card" aria-label="통계">
+          <div class="card-h">
+            <h2>통계</h2>
+            <div class="stats" id="statsStatus">불러오는 중…</div>
+          </div>
+          <div class="card-b">
+            <div class="cards" id="statsCards"></div>
+            <div class="hint">
+              완료율은 \(완료 / 전체\) 기준입니다. (할 일이 0개면 0%로 표시)
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-label="사용자">
+          <div class="card-h">
+            <h2>전체 사용자</h2>
+            <div class="btns">
+              <button class="primary" type="button" id="refreshBtn">새로고침</button>
+              <button class="ghost" type="button" id="goTodoBtn">Todo로 이동</button>
+            </div>
+          </div>
+          <div class="card-b">
+            <div class="table-wrap">
+              <table aria-label="사용자 목록 테이블">
+                <thead>
+                  <tr>
+                    <th style="width: 80px">ID</th>
+                    <th style="width: 220px">아이디</th>
+                    <th style="width: 200px">가입일</th>
+                    <th style="width: 140px">할 일</th>
+                    <th style="width: 140px">완료</th>
+                    <th style="width: 160px">완료율</th>
+                    <th style="width: 160px">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+            <div class="hint" id="usersHint" style="display: none">
+              표시할 사용자가 없어요.
+            </div>
+            <div class="divider"></div>
+            <div class="stats" id="usersStatus">—</div>
+          </div>
+        </section>
+
+        <section class="card" aria-label="사용자별 할 일 현황">
+          <div class="card-h">
+            <h2>사용자별 할 일 현황</h2>
+            <div class="stats" id="userTodosTitle">사용자를 선택하세요</div>
+          </div>
+          <div class="card-b">
+            <div class="grid2">
+              <div class="card" style="box-shadow: none; background: rgba(0,0,0,0.10)">
+                <div class="card-h">
+                  <h2>요약</h2>
+                  <div class="stats" id="userSummary">—</div>
+                </div>
+                <div class="card-b" id="userSummaryCards"></div>
+              </div>
+              <div class="card" style="box-shadow: none; background: rgba(0,0,0,0.10)">
+                <div class="card-h">
+                  <h2>할 일 목록</h2>
+                  <div class="stats" id="userTodosCount">0개</div>
+                </div>
+                <div class="card-b">
+                  <div class="list" id="userTodosList"></div>
+                  <div class="hint" id="userTodosHint" style="display: none">
+                    이 사용자에게 할 일이 없습니다.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hint">
+              사용자 아이디(파란 링크)를 클릭하면 해당 사용자의 할 일을 불러옵니다.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <div>
+        <div class="t-title" id="toastTitle">오류</div>
+        <div class="t-msg" id="toastMsg"></div>
+      </div>
+      <div class="t-right">
+        <button class="ghost" id="toastClose" type="button">닫기</button>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const DEFAULT_API_BASE = "https://ai-todo-app-production-ca99.up.railway.app";
+        const LS_API_BASE = "todo_api_base_v1";
+        const LS_TOKEN = "todo_jwt_token_v1";
+
+        const els = {
+          apiBase: document.getElementById("apiBase"),
+          refreshBtn: document.getElementById("refreshBtn"),
+          goTodoBtn: document.getElementById("goTodoBtn"),
+          usersBody: document.getElementById("usersBody"),
+          usersHint: document.getElementById("usersHint"),
+          usersStatus: document.getElementById("usersStatus"),
+          statsStatus: document.getElementById("statsStatus"),
+          statsCards: document.getElementById("statsCards"),
+          userTodosTitle: document.getElementById("userTodosTitle"),
+          userSummary: document.getElementById("userSummary"),
+          userSummaryCards: document.getElementById("userSummaryCards"),
+          userTodosList: document.getElementById("userTodosList"),
+          userTodosCount: document.getElementById("userTodosCount"),
+          userTodosHint: document.getElementById("userTodosHint"),
+          toast: document.getElementById("toast"),
+          toastTitle: document.getElementById("toastTitle"),
+          toastMsg: document.getElementById("toastMsg"),
+          toastClose: document.getElementById("toastClose"),
+        };
+
+        let state = {
+          apiBase: DEFAULT_API_BASE,
+          token: null,
+          users: [],
+          selectedUserId: null,
+        };
+
+        const fmtDate = (iso) => {
+          try {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return "";
+            return d.toLocaleString(undefined, {
+              year: "2-digit",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } catch {
+            return "";
+          }
+        };
+
+        const toast = (title, msg) => {
+          els.toastTitle.textContent = title;
+          els.toastMsg.textContent = msg;
+          els.toast.classList.add("show");
+        };
+
+        const hideToast = () => els.toast.classList.remove("show");
+
+        const sanitizeBase = (s) => (s || "").trim().replace(/\/+$/, "") || DEFAULT_API_BASE;
+
+        const api = async (path, opts = {}) => {
+          const url = state.apiBase + path;
+          const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+          if (state.token) headers["Authorization"] = `Bearer ${state.token}`;
+          const res = await fetch(url, { ...opts, headers });
+          if (!res.ok) {
+            let detail = "";
+            try {
+              const ct = res.headers.get("content-type") || "";
+              if (ct.includes("application/json")) {
+                const body = await res.json();
+                detail = body?.detail || body?.message || JSON.stringify(body).slice(0, 200);
+              } else {
+                detail = (await res.text()).slice(0, 200);
+              }
+            } catch {
+              detail = "";
+            }
+            throw new Error(`HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
+          }
+          if (res.status === 204) return null;
+          const ct = res.headers.get("content-type") || "";
+          if (ct.includes("application/json")) return await res.json();
+          return await res.text();
+        };
+
+        const pct = (v) => `${Math.round((v || 0) * 1000) / 10}%`;
+
+        const renderStatsCards = (stats) => {
+          const cards = [
+            { k: "총 사용자 수", v: String(stats?.total_users ?? "—"), sub: "등록된 사용자" },
+            { k: "총 할 일 수", v: String(stats?.total_todos ?? "—"), sub: "전체 사용자 합산" },
+            { k: "완료된 할 일", v: String(stats?.done_todos ?? "—"), sub: "done=1" },
+            { k: "완료율", v: pct(stats?.done_rate), sub: "완료 / 전체" },
+          ];
+          els.statsCards.innerHTML = "";
+          for (const c of cards) {
+            const el = document.createElement("div");
+            el.className = "stat-card";
+            el.innerHTML = `
+              <div class="stat-k">${c.k}</div>
+              <div class="stat-v">${c.v}</div>
+              <div class="stat-sub">${c.sub}</div>
+            `;
+            els.statsCards.appendChild(el);
+          }
+        };
+
+        const renderUserSummary = (summary) => {
+          const items = [
+            { k: "사용자", v: `${summary?.username ?? "—"} (#${summary?.id ?? "—"})` },
+            { k: "가입일", v: summary?.created_at ? fmtDate(summary.created_at) : "—" },
+            { k: "할 일", v: String(summary?.todo_total ?? 0) },
+            { k: "완료", v: String(summary?.todo_done ?? 0) },
+            { k: "완료율", v: pct(summary?.todo_done_rate) },
+          ];
+          els.userSummaryCards.innerHTML = "";
+          for (const it of items) {
+            const el = document.createElement("div");
+            el.className = "stat-card";
+            el.style.minHeight = "72px";
+            el.innerHTML = `
+              <div class="stat-k">${it.k}</div>
+              <div class="stat-v" style="font-size: 16px">${it.v}</div>
+            `;
+            els.userSummaryCards.appendChild(el);
+          }
+        };
+
+        const renderUsers = () => {
+          const users = Array.isArray(state.users) ? state.users : [];
+          els.usersBody.innerHTML = "";
+          els.usersHint.style.display = users.length ? "none" : "block";
+          els.usersStatus.textContent = `총 ${users.length}명`;
+
+          for (const u of users) {
+            const tr = document.createElement("tr");
+            const isAdmin = u.username === "admin";
+            const rate = pct(u.todo_done_rate);
+            const badge = u.todo_total
+              ? `<span class="badge ok">활동 있음</span>`
+              : `<span class="badge">할 일 없음</span>`;
+
+            tr.innerHTML = `
+              <td class="mono">${u.id}</td>
+              <td><span class="badge ${isAdmin ? "ok" : ""}">${isAdmin ? "관리자" : "사용자"}</span> <span class="mono">${u.username}</span></td>
+              <td class="mono">${u.created_at ? fmtDate(u.created_at) : ""}</td>
+              <td>${u.todo_total}개</td>
+              <td>${u.todo_done}개</td>
+              <td>${rate} ${badge}</td>
+              <td></td>
+            `;
+
+            const viewBtn = document.createElement("button");
+            viewBtn.type = "button";
+            viewBtn.className = "primary";
+            viewBtn.textContent = "현황 보기";
+            viewBtn.addEventListener("click", () => loadUserTodos(u.id));
+
+            const delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "danger";
+            delBtn.textContent = "삭제";
+            delBtn.disabled = isAdmin;
+            delBtn.title = isAdmin ? "admin 계정은 삭제할 수 없습니다." : "";
+            delBtn.addEventListener("click", () => onDeleteUser(u));
+
+            const td = tr.children[6];
+            td.appendChild(viewBtn);
+            td.appendChild(document.createTextNode(" "));
+            td.appendChild(delBtn);
+
+            // allow click on id as well
+            tr.children[0].classList.add("linkish");
+            tr.children[0].title = "클릭해서 할 일 현황 보기";
+            tr.children[0].addEventListener("click", () => loadUserTodos(u.id));
+
+            els.usersBody.appendChild(tr);
+          }
+        };
+
+        const renderUserTodos = (out) => {
+          const user = out?.user;
+          const summary = out?.summary;
+          const todos = Array.isArray(out?.todos) ? out.todos : [];
+          state.selectedUserId = user?.id ?? null;
+
+          els.userTodosTitle.textContent = user ? `${user.username} (#${user.id})` : "사용자를 선택하세요";
+          els.userSummary.textContent = summary
+            ? `할 일 ${summary.todo_total}개 · 완료 ${summary.todo_done}개 · 완료율 ${pct(summary.todo_done_rate)}`
+            : "—";
+
+          renderUserSummary(summary);
+
+          els.userTodosList.innerHTML = "";
+          els.userTodosCount.textContent = `${todos.length}개`;
+          els.userTodosHint.style.display = todos.length ? "none" : "block";
+
+          for (const t of todos) {
+            const item = document.createElement("div");
+            item.className = "item";
+            const b = document.createElement("span");
+            b.className = `badge ${t.done ? "ok" : "warn"}`;
+            b.textContent = t.done ? "완료" : "진행 중";
+
+            const title = document.createElement("div");
+            title.className = "item-title";
+            title.innerHTML = `<span class="mono">#${t.id}</span> <span>${escapeHtml(t.title)}</span>`;
+            title.appendChild(b);
+
+            const meta = document.createElement("div");
+            meta.className = "stats mono";
+            const ca = fmtDate(t.created_at);
+            const ua = fmtDate(t.updated_at);
+            meta.textContent = `${ca ? `생성 ${ca}` : ""}${ua && ua !== ca ? ` · 수정 ${ua}` : ""}`;
+
+            item.appendChild(title);
+            item.appendChild(meta);
+
+            if (t.description) {
+              const desc = document.createElement("div");
+              desc.className = "item-desc";
+              desc.textContent = t.description;
+              item.appendChild(desc);
+            }
+            els.userTodosList.appendChild(item);
+          }
+        };
+
+        const escapeHtml = (s) =>
+          String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+
+        const loadStats = async () => {
+          els.statsStatus.textContent = "불러오는 중…";
+          try {
+            const stats = await api("/admin/stats", { method: "GET" });
+            renderStatsCards(stats);
+            els.statsStatus.textContent = "최신";
+            els.statsStatus.style.color = "rgba(45,212,191,0.9)";
+          } catch (e) {
+            els.statsStatus.textContent = "실패";
+            els.statsStatus.style.color = "rgba(251,113,133,0.9)";
+            toast(
+              "통계 불러오기 실패",
+              `admin 토큰으로 로그인했는지 확인하세요.\n\n${String(e?.message || e)}`
+            );
+            renderStatsCards({ total_users: "—", total_todos: "—", done_todos: "—", done_rate: 0 });
+          }
+        };
+
+        const loadUsers = async () => {
+          els.usersStatus.textContent = "불러오는 중…";
+          try {
+            const users = await api("/admin/users", { method: "GET" });
+            state.users = Array.isArray(users) ? users : [];
+            renderUsers();
+            els.usersStatus.textContent = `총 ${state.users.length}명 · 최신`;
+          } catch (e) {
+            state.users = [];
+            renderUsers();
+            els.usersStatus.textContent = "불러오기 실패";
+            toast(
+              "사용자 목록 불러오기 실패",
+              `admin 토큰으로 로그인했는지 확인하세요.\n\n${String(e?.message || e)}`
+            );
+          }
+        };
+
+        const loadUserTodos = async (userId) => {
+          els.userTodosTitle.textContent = `사용자 #${userId} 불러오는 중…`;
+          try {
+            const out = await api(`/admin/users/${userId}/todos`, { method: "GET" });
+            renderUserTodos(out);
+          } catch (e) {
+            toast("사용자 할 일 불러오기 실패", String(e?.message || e));
+            els.userTodosTitle.textContent = "사용자를 선택하세요";
+          }
+        };
+
+        const onDeleteUser = async (u) => {
+          if (!u || u.username === "admin") return;
+          const ok = confirm(
+            `정말 삭제할까요?\n\n- 사용자: ${u.username} (#${u.id})\n- 해당 사용자의 할 일도 함께 삭제됩니다.`
+          );
+          if (!ok) return;
+
+          try {
+            await api(`/admin/users/${u.id}`, { method: "DELETE" });
+            toast("삭제 완료", `${u.username} 사용자를 삭제했습니다.`);
+            await refreshAll();
+            if (state.selectedUserId === u.id) {
+              state.selectedUserId = null;
+              els.userTodosTitle.textContent = "사용자를 선택하세요";
+              els.userSummary.textContent = "—";
+              els.userSummaryCards.innerHTML = "";
+              els.userTodosList.innerHTML = "";
+              els.userTodosCount.textContent = "0개";
+              els.userTodosHint.style.display = "block";
+            }
+          } catch (e) {
+            toast("삭제 실패", String(e?.message || e));
+          }
+        };
+
+        const refreshAll = async () => {
+          await Promise.all([loadStats(), loadUsers()]);
+        };
+
+        // wire up
+        els.toastClose.addEventListener("click", hideToast);
+        els.refreshBtn.addEventListener("click", refreshAll);
+        els.goTodoBtn.addEventListener("click", () => (location.href = "/"));
+
+        // api base persistence + token
+        const savedBase = localStorage.getItem(LS_API_BASE);
+        state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
+        els.apiBase.value = state.apiBase;
+        state.token = localStorage.getItem(LS_TOKEN);
+
+        let baseTimer = null;
+        const applyApiBase = () => {
+          const v = sanitizeBase(els.apiBase.value);
+          state.apiBase = v;
+          els.apiBase.value = v;
+          localStorage.setItem(LS_API_BASE, v);
+          refreshAll();
+        };
+
+        els.apiBase.addEventListener("input", () => {
+          clearTimeout(baseTimer);
+          baseTimer = setTimeout(applyApiBase, 400);
+        });
+        els.apiBase.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            applyApiBase();
+          }
+        });
+
+        // init
+        refreshAll();
+      })();
+    </script>
+  </body>
+</html>
+

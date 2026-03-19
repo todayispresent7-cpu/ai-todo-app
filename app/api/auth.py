@@ -45,8 +45,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def _user_to_out(user: UserRecord) -> UserOut:
-    return UserOut(id=user.id, username=user.username, created_at=user.created_at)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

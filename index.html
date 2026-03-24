@@ -969,7 +969,7 @@
             }
             const data = await res.json();
             state.token = data.access_token;
-            localStorage.setItem(LS_TOKEN, state.token);
+            sessionStorage.setItem(LS_TOKEN, state.token);
             setAuthStatus();
             toast("로그인 성공", `${username}님 환영합니다.`);
             await checkHealth().finally(loadTodos);
@@ -1003,7 +1003,7 @@
 
         const doLogout = () => {
           state.token = null;
-          localStorage.removeItem(LS_TOKEN);
+          sessionStorage.removeItem(LS_TOKEN);
           setAuthStatus();
           els.list.innerHTML = "";
           els.stats.textContent = "0개";
@@ -1025,17 +1025,17 @@
         });
 
         // api base persistence
-        const savedBase = localStorage.getItem(LS_API_BASE);
+        const savedBase = sessionStorage.getItem(LS_API_BASE);
         state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
         els.apiBase.value = state.apiBase;
-        state.token = localStorage.getItem(LS_TOKEN);
+        state.token = sessionStorage.getItem(LS_TOKEN);
         setAuthStatus();
 
         const applyApiBase = () => {
           const v = sanitizeBase(els.apiBase.value);
           state.apiBase = v;
           els.apiBase.value = v;
-          localStorage.setItem(LS_API_BASE, v);
+          sessionStorage.setItem(LS_API_BASE, v);
           checkHealth().finally(loadTodos);
         };
 

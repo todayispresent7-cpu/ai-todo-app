@@ -880,17 +880,17 @@
         els.goTodoBtn.addEventListener("click", () => (location.href = "/"));
 
         // api base persistence + token
-        const savedBase = localStorage.getItem(LS_API_BASE);
+        const savedBase = sessionStorage.getItem(LS_API_BASE);
         state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
         els.apiBase.value = state.apiBase;
-        state.token = localStorage.getItem(LS_TOKEN);
+        state.token = sessionStorage.getItem(LS_TOKEN);
 
         let baseTimer = null;
         const applyApiBase = () => {
           const v = sanitizeBase(els.apiBase.value);
           state.apiBase = v;
           els.apiBase.value = v;
-          localStorage.setItem(LS_API_BASE, v);
+          sessionStorage.setItem(LS_API_BASE, v);
           refreshAll();
         };
 

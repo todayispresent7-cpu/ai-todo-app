@@ -4,1056 +4,1283 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Todo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --bg: #0b1020;
-        --card: rgba(255, 255, 255, 0.06);
-        --card-2: rgba(255, 255, 255, 0.08);
-        --border: rgba(255, 255, 255, 0.12);
-        --text: rgba(255, 255, 255, 0.92);
-        --muted: rgba(255, 255, 255, 0.68);
-        --muted-2: rgba(255, 255, 255, 0.52);
+        --bg: #191919;
+        --sidebar: #1f1f1f;
+        --sidebar-hover: #2a2a2a;
+        --sidebar-active: #2f2f2f;
+        --main: #191919;
+        --border: rgba(255,255,255,0.07);
+        --border-2: rgba(255,255,255,0.11);
+        --text: rgba(255,255,255,0.88);
+        --text-2: rgba(255,255,255,0.62);
+        --text-3: rgba(255,255,255,0.38);
         --accent: #7c5cff;
-        --accent-2: #2dd4bf;
+        --accent-soft: rgba(124,92,255,0.15);
+        --teal: #2dd4bf;
+        --teal-soft: rgba(45,212,191,0.12);
         --danger: #fb7185;
-        --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
-        --radius: 14px;
+        --danger-soft: rgba(251,113,133,0.12);
+        --yellow: #f5c542;
+        --radius-sm: 6px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --mono: 'Geist Mono', ui-monospace, monospace;
+        --sans: 'Pretendard', ui-sans-serif, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
 
-      html,
+      html, body { height: 100%; overflow: hidden; }
+
       body {
-        height: 100%;
-      }
-
-      body {
-        margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-          "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial,
-          "Helvetica Neue", sans-serif;
+        font-family: var(--sans);
+        background: var(--bg);
         color: var(--text);
-        background: radial-gradient(
-            800px 420px at 20% 8%,
-            rgba(124, 92, 255, 0.32),
-            transparent 55%
-          ),
-          radial-gradient(
-            700px 400px at 80% 18%,
-            rgba(45, 212, 191, 0.18),
-            transparent 60%
-          ),
-          radial-gradient(
-            900px 480px at 40% 100%,
-            rgba(251, 113, 133, 0.12),
-            transparent 60%
-          ),
-          linear-gradient(180deg, #090d1a 0%, #050815 100%);
+        display: flex;
+        height: 100vh;
       }
 
-      .wrap {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 28px 18px 42px;
+      /* ── SIDEBAR ── */
+      .sidebar {
+        width: 260px;
+        min-width: 260px;
+        background: var(--sidebar);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
       }
 
-      header {
+      .sidebar-header {
+        padding: 16px 14px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .workspace-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .workspace-name:hover { background: var(--sidebar-hover); }
+
+      .workspace-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--accent), var(--teal));
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .workspace-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: -0.2px;
+      }
+
+      .auth-area {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .auth-status-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 18px;
+        margin-bottom: 8px;
       }
 
-      .title {
+      .auth-badge {
+        font-size: 11px;
+        font-family: var(--mono);
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border-2);
+        color: var(--text-3);
+        background: transparent;
+        transition: all 0.2s;
+      }
+
+      .auth-badge.logged-in {
+        color: var(--teal);
+        border-color: rgba(45,212,191,0.3);
+        background: var(--teal-soft);
+      }
+
+      .auth-inputs {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        min-width: 0;
+        margin-bottom: 8px;
       }
 
-      .title h1 {
-        margin: 0;
-        font-size: 22px;
-        letter-spacing: -0.3px;
-      }
-
-      .subtitle {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.04);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
-        min-width: 0;
-      }
-
-      .pill label {
-        color: var(--muted);
-        font-size: 12px;
-        white-space: nowrap;
-      }
-
-      .pill input {
-        width: 240px;
-        max-width: 44vw;
-        background: transparent;
-        border: none;
-        outline: none;
+      .auth-input {
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-2);
+        background: rgba(0,0,0,0.2);
         color: var(--text);
+        font-family: var(--sans);
         font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: 360px 1fr;
-        gap: 16px;
+      .auth-input:focus {
+        border-color: rgba(124,92,255,0.5);
+        box-shadow: 0 0 0 3px rgba(124,92,255,0.12);
       }
 
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
+      .auth-input::placeholder { color: var(--text-3); }
 
-        .pill input {
-          width: 180px;
-        }
-      }
-
-      .card {
-        border: 1px solid var(--border);
-        background: var(--card);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .card .card-h {
-        padding: 14px 16px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      .auth-btns {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .card .card-h h2 {
-        margin: 0;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.86);
-        letter-spacing: -0.2px;
-      }
-
-      .card .card-b {
-        padding: 14px 16px 16px;
-      }
-
-      .form {
-        display: grid;
-        gap: 10px;
-      }
-
-      .field {
-        display: grid;
         gap: 6px;
       }
 
-      .field label {
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 11px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-2);
+        background: rgba(255,255,255,0.05);
+        color: var(--text-2);
+        font-family: var(--sans);
         font-size: 12px;
-        color: var(--muted);
-      }
-
-      .field input,
-      .field textarea,
-      .field select {
-        width: 100%;
-        padding: 11px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(0, 0, 0, 0.18);
-        color: var(--text);
-        outline: none;
-      }
-
-      .field textarea {
-        resize: vertical;
-        min-height: 92px;
-        max-height: 200px;
-        line-height: 1.35;
-      }
-
-      .field input:focus,
-      .field textarea:focus,
-      .field select:focus {
-        border-color: rgba(124, 92, 255, 0.7);
-        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
-      }
-
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .btns {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-
-      button {
-        appearance: none;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text);
-        padding: 10px 12px;
-        border-radius: 12px;
+        font-weight: 500;
         cursor: pointer;
-        font-weight: 600;
-        letter-spacing: -0.1px;
-        transition: transform 120ms ease, background 120ms ease,
-          border-color 120ms ease, opacity 120ms ease;
+        transition: all 0.15s;
+        white-space: nowrap;
       }
 
-      button:hover {
-        background: rgba(255, 255, 255, 0.09);
-        border-color: rgba(255, 255, 255, 0.2);
+      .btn:hover {
+        background: rgba(255,255,255,0.09);
+        color: var(--text);
+        border-color: var(--border-2);
       }
 
-      button:active {
-        transform: translateY(1px);
-      }
+      .btn:active { transform: translateY(1px); }
+      .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-      button.primary {
-        border-color: rgba(124, 92, 255, 0.55);
-        background: linear-gradient(
-          180deg,
-          rgba(124, 92, 255, 0.9),
-          rgba(124, 92, 255, 0.55)
-        );
-      }
-
-      button.primary:hover {
-        border-color: rgba(124, 92, 255, 0.8);
-        background: linear-gradient(
-          180deg,
-          rgba(124, 92, 255, 0.96),
-          rgba(124, 92, 255, 0.6)
-        );
-      }
-
-      button.danger {
-        border-color: rgba(251, 113, 133, 0.55);
-        background: rgba(251, 113, 133, 0.12);
-      }
-
-      button.danger:hover {
-        border-color: rgba(251, 113, 133, 0.75);
-        background: rgba(251, 113, 133, 0.16);
-      }
-
-      button.ghost {
+      .btn.primary {
+        background: var(--accent);
         border-color: transparent;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .btn.primary:hover { background: #6b4de6; }
+
+      .btn.ghost {
         background: transparent;
-        color: var(--muted);
+        border-color: transparent;
+        color: var(--text-3);
+        padding: 7px 8px;
       }
 
-      button.ghost:hover {
-        background: rgba(255, 255, 255, 0.06);
-        color: rgba(255, 255, 255, 0.8);
-        border-color: rgba(255, 255, 255, 0.12);
+      .btn.ghost:hover { background: var(--sidebar-hover); color: var(--text-2); border-color: transparent; }
+
+      .btn.danger-ghost {
+        background: transparent;
+        border-color: transparent;
+        color: var(--text-3);
+        padding: 4px 7px;
+        font-size: 11px;
       }
 
-      button:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
+      .btn.danger-ghost:hover { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+
+      /* sidebar nav */
+      .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 8px;
       }
 
-      .stats {
-        font-size: 12px;
-        color: var(--muted);
+      .sidebar-nav::-webkit-scrollbar { width: 4px; }
+      .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+      .nav-section-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-3);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 10px 8px 4px;
       }
 
-      .divider {
-        height: 1px;
-        background: rgba(255, 255, 255, 0.08);
-        margin: 12px 0;
+      .todo-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background 0.12s;
+        user-select: none;
+        position: relative;
       }
 
-      .list {
-        display: grid;
-        gap: 10px;
-      }
+      .todo-nav-item:hover { background: var(--sidebar-hover); }
+      .todo-nav-item.active { background: var(--sidebar-active); }
 
-      .item {
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(0, 0, 0, 0.14);
-        border-radius: 14px;
-        padding: 12px 12px;
-        display: grid;
-        grid-template-columns: 34px 1fr auto;
-        gap: 10px;
-        align-items: start;
-      }
-
-      .check {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.06);
+      .todo-nav-item .nav-check {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1.5px solid rgba(255,255,255,0.2);
         display: grid;
         place-items: center;
-        cursor: pointer;
-        user-select: none;
-        transition: background 120ms ease, border-color 120ms ease;
+        flex-shrink: 0;
+        transition: all 0.15s;
+        font-size: 10px;
       }
 
-      .check:hover {
-        border-color: rgba(45, 212, 191, 0.55);
-        background: rgba(45, 212, 191, 0.12);
+      .todo-nav-item.done-item .nav-check {
+        border-color: var(--teal);
+        background: var(--teal-soft);
+        color: var(--teal);
       }
 
-      .check[data-done="true"] {
-        border-color: rgba(45, 212, 191, 0.65);
-        background: rgba(45, 212, 191, 0.18);
-      }
-
-      .content {
-        min-width: 0;
-      }
-
-      .line1 {
-        display: flex;
-        gap: 10px;
-        align-items: baseline;
-        flex-wrap: wrap;
-      }
-
-      .item-title {
-        font-weight: 800;
-        letter-spacing: -0.2px;
+      .nav-item-title {
+        font-size: 13px;
+        color: var(--text-2);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        max-width: 100%;
+        flex: 1;
+        transition: color 0.15s;
       }
 
-      .item-title.done {
-        color: rgba(255, 255, 255, 0.62);
+      .todo-nav-item:hover .nav-item-title,
+      .todo-nav-item.active .nav-item-title { color: var(--text); }
+
+      .todo-nav-item.done-item .nav-item-title {
         text-decoration: line-through;
-        text-decoration-thickness: 2px;
+        color: var(--text-3);
       }
 
-      .meta {
+      .nav-del-btn {
+        opacity: 0;
+        transition: opacity 0.12s;
+        padding: 2px 5px;
+        border-radius: 4px;
+        border: none;
+        background: transparent;
+        color: var(--text-3);
         font-size: 11px;
-        color: var(--muted-2);
+        cursor: pointer;
+        line-height: 1;
       }
 
-      .desc {
-        margin-top: 6px;
+      .todo-nav-item:hover .nav-del-btn { opacity: 1; }
+      .nav-del-btn:hover { background: var(--danger-soft); color: var(--danger); }
+
+      .sidebar-footer {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      .api-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.15);
+      }
+
+      .api-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-3);
+        white-space: nowrap;
+      }
+
+      .api-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-2);
+        font-family: var(--mono);
+        font-size: 11px;
+        min-width: 0;
+      }
+
+      /* ── MAIN ── */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .main-topbar {
+        height: 48px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 28px;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-3);
+      }
+
+      .breadcrumb .crumb { color: var(--text-2); font-weight: 500; }
+      .breadcrumb .sep { font-size: 11px; }
+
+      .topbar-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .net-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-3);
+        transition: background 0.3s;
+        flex-shrink: 0;
+      }
+
+      .net-dot.ok { background: var(--teal); box-shadow: 0 0 6px rgba(45,212,191,0.5); }
+      .net-dot.err { background: var(--danger); }
+
+      .net-label {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.72);
-        line-height: 1.35;
-        white-space: pre-wrap;
-        word-break: break-word;
+        color: var(--text-3);
+        font-family: var(--mono);
       }
 
-      .actions {
+      /* ── CONTENT AREA ── */
+      .content-area {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* empty / no selection */
+      .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: var(--text-3);
+      }
+
+      .empty-icon {
+        font-size: 40px;
+        opacity: 0.3;
+      }
+
+      .empty-text { font-size: 14px; }
+
+      /* detail view */
+      .detail-view {
+        flex: 1;
+        overflow-y: auto;
+        padding: 48px 80px 80px;
+        display: none;
+      }
+
+      .detail-view.visible { display: block; }
+
+      .detail-view::-webkit-scrollbar { width: 5px; }
+      .detail-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
+
+      .detail-done-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
+        transition: background 0.15s;
+      }
+
+      .detail-done-toggle:hover { background: rgba(255,255,255,0.05); }
+
+      .big-check {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1.5px solid rgba(255,255,255,0.2);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+
+      .big-check.done {
+        border-color: var(--teal);
+        background: var(--teal-soft);
+        color: var(--teal);
+      }
+
+      .done-label { font-size: 13px; color: var(--text-3); }
+
+      .detail-title-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: var(--sans);
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.8px;
+        line-height: 1.2;
+        margin-bottom: 6px;
+        resize: none;
+        overflow: hidden;
+      }
+
+      .detail-title-input::placeholder { color: var(--text-3); }
+      .detail-title-input.done-title { color: var(--text-3); text-decoration: line-through; }
+
+      .detail-meta {
+        font-size: 12px;
+        color: var(--text-3);
+        font-family: var(--mono);
+        margin-bottom: 28px;
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .detail-divider {
+        height: 1px;
+        background: var(--border);
+        margin-bottom: 24px;
+      }
+
+      .detail-desc-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-3);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .detail-desc-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: var(--sans);
+        font-size: 15px;
+        color: var(--text-2);
+        line-height: 1.7;
+        resize: none;
+        min-height: 120px;
+      }
+
+      .detail-desc-input::placeholder { color: var(--text-3); }
+
+      .detail-actions {
+        margin-top: 32px;
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
         align-items: center;
       }
 
-      .badge {
+      .save-hint {
         font-size: 11px;
-        padding: 6px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: var(--muted);
-        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-3);
+        font-family: var(--mono);
+        margin-left: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
       }
 
+      .save-hint.visible { opacity: 1; }
+
+      /* new todo panel */
+      .new-panel {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+        padding: 48px 80px 80px;
+      }
+
+      .new-panel.visible { display: block; }
+
+      .new-panel-title {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text-3);
+        letter-spacing: -0.8px;
+        margin-bottom: 28px;
+      }
+
+      .new-form { display: grid; gap: 16px; max-width: 560px; }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-3);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+
+      .field-input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-2);
+        background: rgba(255,255,255,0.04);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .field-input:focus {
+        border-color: rgba(124,92,255,0.45);
+        box-shadow: 0 0 0 3px rgba(124,92,255,0.1);
+      }
+
+      .field-input::placeholder { color: var(--text-3); }
+
+      textarea.field-input {
+        resize: vertical;
+        min-height: 100px;
+        line-height: 1.6;
+      }
+
+      .new-form-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      /* filter bar */
+      .filter-bar {
+        display: flex;
+        gap: 4px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .filter-tab {
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-3);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: color 0.15s, border-color 0.15s;
+        user-select: none;
+      }
+
+      .filter-tab:hover { color: var(--text-2); }
+      .filter-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+      /* stats bar */
+      .stats-row {
+        padding: 8px 28px;
+        font-size: 12px;
+        color: var(--text-3);
+        font-family: var(--mono);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      /* toast */
       .toast {
         position: fixed;
         left: 50%;
-        bottom: 18px;
+        bottom: 20px;
         transform: translateX(-50%);
-        max-width: min(720px, calc(100vw - 24px));
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(10, 12, 24, 0.82);
-        backdrop-filter: blur(10px);
-        border-radius: 14px;
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        max-width: min(480px, calc(100vw - 32px));
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(20,20,20,0.92);
+        backdrop-filter: blur(12px);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         padding: 12px 14px;
         display: none;
         gap: 10px;
         align-items: flex-start;
         z-index: 9999;
+        animation: slideUp 0.2s ease;
       }
 
-      .toast.show {
-        display: flex;
+      @keyframes slideUp {
+        from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+        to { transform: translateX(-50%) translateY(0); opacity: 1; }
       }
 
-      .toast .t-title {
-        font-weight: 800;
-        font-size: 13px;
-        margin-bottom: 2px;
+      .toast.show { display: flex; }
+      .t-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+      .t-msg { font-size: 12px; color: var(--text-2); line-height: 1.4; }
+      .t-right { margin-left: auto; }
+
+      /* scrollbar global */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.07) transparent;
       }
 
-      .toast .t-msg {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.78);
-        line-height: 1.3;
-      }
-
-      .toast .t-right {
-        margin-left: auto;
-      }
-
-      .hint {
-        margin-top: 10px;
-        font-size: 12px;
-        color: var(--muted);
-        line-height: 1.35;
-      }
-
-      .kbd {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-        font-size: 11px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-bottom-color: rgba(255, 255, 255, 0.22);
-        background: rgba(255, 255, 255, 0.06);
-        padding: 2px 6px;
-        border-radius: 8px;
-        color: rgba(255, 255, 255, 0.82);
+      @media (max-width: 700px) {
+        .sidebar { width: 220px; min-width: 220px; }
+        .detail-view, .new-panel { padding: 32px 24px 60px; }
+        .detail-title-input { font-size: 26px; }
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <div class="title">
-          <h1>Todo</h1>
-          <div class="subtitle">
-            FastAPI Todo API 연결 프론트엔드 · 로그인 후 내 할 일만 보기
-          </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="workspace-name">
+          <div class="workspace-icon">✦</div>
+          <span class="workspace-title">My Todo</span>
         </div>
-
-        <div class="pill" title="기본값: https://ai-todo-app-production-ca99.up.railway.app">
-          <label for="apiBase">API</label>
-          <input id="apiBase" type="text" spellcheck="false" />
-        </div>
-      </header>
-
-      <div class="grid">
-        <section class="card" aria-label="인증">
-          <div class="card-h">
-            <h2>로그인 / 회원가입</h2>
-            <div class="stats" id="authStatus">로그인 필요</div>
-          </div>
-          <div class="card-b">
-            <div class="field">
-              <label for="username">아이디</label>
-              <input
-                id="username"
-                name="username"
-                placeholder="아이디를 입력하세요"
-                maxlength="50"
-                required
-              />
-            </div>
-            <div class="field">
-              <label for="password">비밀번호</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="비밀번호 (최소 6자)"
-                minlength="6"
-                maxlength="128"
-                required
-              />
-            </div>
-            <div class="row">
-              <div class="btns">
-                <button class="primary" type="button" id="loginBtn">
-                  로그인
-                </button>
-                <button type="button" id="registerBtn">
-                  회원가입
-                </button>
-                <button class="ghost" type="button" id="logoutBtn">
-                  로그아웃
-                </button>
-              </div>
-              <div class="hint">
-                로그인 후에만 할 일을 조회/추가/수정/삭제할 수 있습니다.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="card-h">
-            <h2>새 할 일</h2>
-            <div class="stats" id="netStatus">연결 확인 중…</div>
-          </div>
-          <div class="card-b">
-            <form class="form" id="createForm">
-              <div class="field">
-                <label for="title">제목</label>
-                <input
-                  id="title"
-                  name="title"
-                  placeholder="예: 운동 20분"
-                  maxlength="200"
-                  required
-                />
-              </div>
-
-              <div class="field">
-                <label for="description">설명 (선택)</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  placeholder="메모를 적어두면 좋아요."
-                  maxlength="2000"
-                ></textarea>
-              </div>
-
-              <div class="row">
-                <div class="btns">
-                  <button class="primary" type="submit" id="addBtn">
-                    추가
-                  </button>
-                  <button type="button" id="aiStepsBtn" title="제목으로 실행 단계를 자동 생성">
-                    AI 단계 생성
-                  </button>
-                  <button class="ghost" type="button" id="refreshBtn">
-                    새로고침
-                  </button>
-                </div>
-
-                <div class="hint">
-                  <span class="kbd">Enter</span>로 추가 ·
-                  <span class="kbd">Ctrl</span>+<span class="kbd">R</span> 대신
-                  “새로고침”
-                </div>
-              </div>
-            </form>
-
-            <div class="divider"></div>
-
-            <div class="field">
-              <label for="filter">보기</label>
-              <select id="filter">
-                <option value="all" selected>전체</option>
-                <option value="active">진행 중</option>
-                <option value="done">완료</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="card-h">
-            <h2>할 일 목록</h2>
-            <div class="stats" id="stats">0개</div>
-          </div>
-          <div class="card-b">
-            <div class="list" id="list"></div>
-            <div class="hint" id="emptyHint" style="display: none">
-              아직 할 일이 없어요. 왼쪽에서 하나 추가해보세요.
-            </div>
-          </div>
-        </section>
       </div>
-    </div>
 
+      <div class="auth-area">
+        <div class="auth-status-row">
+          <span class="auth-badge" id="authBadge">로그인 필요</span>
+          <button class="btn ghost" id="logoutBtn" style="display:none;font-size:11px;padding:4px 7px;">로그아웃</button>
+        </div>
+        <div class="auth-inputs" id="authInputs">
+          <input class="auth-input" id="username" placeholder="아이디" maxlength="50" autocomplete="username" />
+          <input class="auth-input" id="password" type="password" placeholder="비밀번호 (6자 이상)" minlength="6" maxlength="128" autocomplete="current-password" />
+          <div class="auth-btns">
+            <button class="btn primary" id="loginBtn" style="flex:1;">로그인</button>
+            <button class="btn" id="registerBtn">회원가입</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav">
+        <div class="nav-section-label">페이지</div>
+        <div id="navList"></div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="api-pill">
+          <span class="api-label">API</span>
+          <input class="api-input" id="apiBase" type="text" spellcheck="false" />
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="main-topbar">
+        <div class="breadcrumb">
+          <span>My Todo</span>
+          <span class="sep">›</span>
+          <span class="crumb" id="topbarCrumb">할 일 선택</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="net-dot" id="netDot"></div>
+          <span class="net-label" id="netLabel">확인 중…</span>
+          <button class="btn" id="newTodoBtn">+ 새 페이지</button>
+          <button class="btn ghost" id="refreshBtn">↺</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-tab active" data-filter="all">전체</div>
+        <div class="filter-tab" data-filter="active">진행 중</div>
+        <div class="filter-tab" data-filter="done">완료</div>
+      </div>
+
+      <div class="stats-row">
+        <span id="statsText">0개</span>
+      </div>
+
+      <div class="content-area" id="contentArea">
+        <!-- empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">왼쪽에서 할 일을 선택하거나 새 페이지를 만들어보세요</div>
+        </div>
+
+        <!-- detail view -->
+        <div class="detail-view" id="detailView">
+          <div class="detail-done-toggle" id="doneToggle">
+            <div class="big-check" id="bigCheck"></div>
+            <span class="done-label" id="doneLabel">완료로 표시</span>
+          </div>
+          <textarea class="detail-title-input" id="detailTitle" placeholder="제목 없음" rows="1"></textarea>
+          <div class="detail-meta" id="detailMeta"></div>
+          <div class="detail-divider"></div>
+          <div class="detail-desc-label">메모</div>
+          <textarea class="detail-desc-input" id="detailDesc" placeholder="내용을 입력하세요…"></textarea>
+          <div class="detail-actions">
+            <button class="btn primary" id="saveBtn">저장</button>
+            <button class="btn" id="aiStepsBtn">✦ AI 단계 생성</button>
+            <button class="btn danger-ghost" id="deleteBtn">삭제</button>
+            <span class="save-hint" id="saveHint">Ctrl+S로 저장</span>
+          </div>
+        </div>
+
+        <!-- new todo panel -->
+        <div class="new-panel" id="newPanel">
+          <div class="new-panel-title">새 할 일</div>
+          <div class="new-form">
+            <div>
+              <div class="field-label">제목</div>
+              <input class="field-input" id="newTitle" placeholder="할 일을 입력하세요" maxlength="200" />
+            </div>
+            <div>
+              <div class="field-label">메모 (선택)</div>
+              <textarea class="field-input" id="newDesc" placeholder="메모를 적어두면 좋아요." maxlength="2000"></textarea>
+            </div>
+            <div class="new-form-actions">
+              <button class="btn primary" id="addBtn">페이지 추가</button>
+              <button class="btn" id="newAiBtn">✦ AI 단계 생성</button>
+              <button class="btn ghost" id="cancelNewBtn">취소</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- TOAST -->
     <div class="toast" id="toast" role="status" aria-live="polite">
       <div>
-        <div class="t-title" id="toastTitle">오류</div>
+        <div class="t-title" id="toastTitle">알림</div>
         <div class="t-msg" id="toastMsg"></div>
       </div>
       <div class="t-right">
-        <button class="ghost" id="toastClose" type="button">닫기</button>
+        <button class="btn ghost" id="toastClose" type="button" style="font-size:11px;padding:4px 8px;">닫기</button>
       </div>
     </div>
 
     <script>
-      (() => {
-        const DEFAULT_API_BASE = "https://ai-todo-app-production-ca99.up.railway.app";
-        const LS_API_BASE = "todo_api_base_v1";
-        const LS_TOKEN = "todo_jwt_token_v1";
+    (() => {
+      const DEFAULT_API_BASE = "https://ai-todo-app-production-ca99.up.railway.app";
+      const LS_API_BASE = "todo_api_base_v1";
+      const LS_TOKEN = "todo_jwt_token_v1";
 
-        const els = {
-          apiBase: document.getElementById("apiBase"),
-          netStatus: document.getElementById("netStatus"),
-          authStatus: document.getElementById("authStatus"),
-          createForm: document.getElementById("createForm"),
-          title: document.getElementById("title"),
-          description: document.getElementById("description"),
-          addBtn: document.getElementById("addBtn"),
-          aiStepsBtn: document.getElementById("aiStepsBtn"),
-          refreshBtn: document.getElementById("refreshBtn"),
-          filter: document.getElementById("filter"),
-          list: document.getElementById("list"),
-          stats: document.getElementById("stats"),
-          emptyHint: document.getElementById("emptyHint"),
-          toast: document.getElementById("toast"),
-          toastTitle: document.getElementById("toastTitle"),
-          toastMsg: document.getElementById("toastMsg"),
-          toastClose: document.getElementById("toastClose"),
-          username: document.getElementById("username"),
-          password: document.getElementById("password"),
-          loginBtn: document.getElementById("loginBtn"),
-          registerBtn: document.getElementById("registerBtn"),
-          logoutBtn: document.getElementById("logoutBtn"),
-        };
+      const $ = id => document.getElementById(id);
 
-        let state = {
-          todos: [],
-          loading: false,
-          filter: "all",
-          apiBase: DEFAULT_API_BASE,
-          token: null,
-        };
+      const els = {
+        apiBase: $("apiBase"),
+        netDot: $("netDot"),
+        netLabel: $("netLabel"),
+        authBadge: $("authBadge"),
+        authInputs: $("authInputs"),
+        username: $("username"),
+        password: $("password"),
+        loginBtn: $("loginBtn"),
+        registerBtn: $("registerBtn"),
+        logoutBtn: $("logoutBtn"),
+        navList: $("navList"),
+        topbarCrumb: $("topbarCrumb"),
+        newTodoBtn: $("newTodoBtn"),
+        refreshBtn: $("refreshBtn"),
+        filterTabs: document.querySelectorAll(".filter-tab"),
+        statsText: $("statsText"),
+        emptyState: $("emptyState"),
+        detailView: $("detailView"),
+        doneToggle: $("doneToggle"),
+        bigCheck: $("bigCheck"),
+        doneLabel: $("doneLabel"),
+        detailTitle: $("detailTitle"),
+        detailMeta: $("detailMeta"),
+        detailDesc: $("detailDesc"),
+        saveBtn: $("saveBtn"),
+        aiStepsBtn: $("aiStepsBtn"),
+        deleteBtn: $("deleteBtn"),
+        saveHint: $("saveHint"),
+        newPanel: $("newPanel"),
+        newTitle: $("newTitle"),
+        newDesc: $("newDesc"),
+        addBtn: $("addBtn"),
+        newAiBtn: $("newAiBtn"),
+        cancelNewBtn: $("cancelNewBtn"),
+        toast: $("toast"),
+        toastTitle: $("toastTitle"),
+        toastMsg: $("toastMsg"),
+        toastClose: $("toastClose"),
+      };
 
-        const fmtDate = (iso) => {
+      let state = {
+        todos: [],
+        selectedId: null,
+        filter: "all",
+        apiBase: DEFAULT_API_BASE,
+        token: null,
+        dirty: false,
+      };
+
+      // ── TOAST ──
+      let toastTimer = null;
+      const toast = (title, msg) => {
+        els.toastTitle.textContent = title;
+        els.toastMsg.textContent = msg;
+        els.toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => els.toast.classList.remove("show"), 4000);
+      };
+      els.toastClose.addEventListener("click", () => els.toast.classList.remove("show"));
+
+      // ── UTILS ──
+      const sanitizeBase = s => {
+        const v = (s || "").trim().replace(/\/+$/, "");
+        return v.length ? v : DEFAULT_API_BASE;
+      };
+
+      const fmtDate = iso => {
+        try {
+          const d = new Date(iso);
+          if (isNaN(d)) return "";
+          return d.toLocaleString("ko-KR", { year:"2-digit", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+        } catch { return ""; }
+      };
+
+      // ── API ──
+      const api = async (path, opts = {}) => {
+        const url = state.apiBase + path;
+        const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+        if (state.token) headers["Authorization"] = `Bearer ${state.token}`;
+        const res = await fetch(url, { ...opts, headers });
+        if (!res.ok) {
+          let detail = "";
           try {
-            const d = new Date(iso);
-            if (Number.isNaN(d.getTime())) return "";
-            return d.toLocaleString(undefined, {
-              year: "2-digit",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-          } catch {
-            return "";
-          }
-        };
+            const ct = res.headers.get("content-type") || "";
+            if (ct.includes("application/json")) {
+              const b = await res.json();
+              detail = b?.detail || b?.message || JSON.stringify(b).slice(0, 200);
+            } else { detail = (await res.text()).slice(0, 200); }
+          } catch {}
+          throw new Error(`HTTP ${res.status}${detail ? ` - ${detail}` : ""}`);
+        }
+        if (res.status === 204) return null;
+        const ct = res.headers.get("content-type") || "";
+        return ct.includes("application/json") ? res.json() : res.text();
+      };
 
-        const toast = (title, msg) => {
-          els.toastTitle.textContent = title;
-          els.toastMsg.textContent = msg;
-          els.toast.classList.add("show");
-        };
+      // ── NETWORK ──
+      const setNet = (ok, msg) => {
+        els.netDot.className = "net-dot" + (ok ? " ok" : " err");
+        els.netLabel.textContent = msg;
+      };
 
-        const hideToast = () => {
-          els.toast.classList.remove("show");
-        };
+      const checkHealth = async () => {
+        try { await api("/health"); setNet(true, "연결됨"); }
+        catch { setNet(false, "연결 실패"); }
+      };
 
-        const sanitizeBase = (s) => {
-          const v = (s || "").trim().replace(/\/+$/, "");
-          return v.length ? v : DEFAULT_API_BASE;
-        };
+      // ── AUTH ──
+      const setAuthUI = () => {
+        if (state.token) {
+          els.authBadge.textContent = "로그인됨";
+          els.authBadge.className = "auth-badge logged-in";
+          els.authInputs.style.display = "none";
+          els.logoutBtn.style.display = "";
+        } else {
+          els.authBadge.textContent = "로그인 필요";
+          els.authBadge.className = "auth-badge";
+          els.authInputs.style.display = "";
+          els.logoutBtn.style.display = "none";
+        }
+      };
 
-        const api = async (path, opts = {}) => {
-          const url = state.apiBase + path;
-          const headers = Object.assign(
-            { "Content-Type": "application/json" },
-            opts.headers || {}
-          );
-          if (state.token) {
-            headers["Authorization"] = `Bearer ${state.token}`;
-          }
-          const res = await fetch(url, { ...opts, headers });
-          if (!res.ok) {
-            let detail = "";
-            try {
-              const ct = res.headers.get("content-type") || "";
-              if (ct.includes("application/json")) {
-                const body = await res.json();
-                detail =
-                  body?.detail ||
-                  body?.message ||
-                  JSON.stringify(body).slice(0, 200);
-              } else {
-                detail = (await res.text()).slice(0, 200);
-              }
-            } catch {
-              detail = "";
-            }
-            const msg = `HTTP ${res.status}${detail ? ` - ${detail}` : ""}`;
-            throw new Error(msg);
-          }
-          if (res.status === 204) return null;
-          const ct = res.headers.get("content-type") || "";
-          if (ct.includes("application/json")) return await res.json();
-          return await res.text();
-        };
-
-        const setNet = (ok, msg) => {
-          els.netStatus.textContent = msg;
-          els.netStatus.style.color = ok
-            ? "rgba(255,255,255,0.68)"
-            : "rgba(251,113,133,0.9)";
-        };
-
-        const setAuthStatus = () => {
-          if (state.token) {
-            els.authStatus.textContent = "로그인됨";
-            els.authStatus.style.color = "rgba(45,212,191,0.9)";
-          } else {
-            els.authStatus.textContent = "로그인 필요";
-            els.authStatus.style.color = "rgba(251,113,133,0.9)";
-          }
-        };
-
-        const render = () => {
-          const all = state.todos.slice().sort((a, b) => a.id - b.id);
-          const visible = all.filter((t) => {
-            if (state.filter === "active") return !t.done;
-            if (state.filter === "done") return !!t.done;
-            return true;
+      const doLogin = async () => {
+        const username = els.username.value.trim();
+        const password = els.password.value;
+        if (!username || !password) { toast("입력 필요", "아이디와 비밀번호를 입력해주세요."); return; }
+        els.loginBtn.disabled = true;
+        try {
+          const body = new URLSearchParams();
+          body.set("username", username);
+          body.set("password", password);
+          body.set("grant_type", "password");
+          const res = await fetch(state.apiBase + "/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body,
           });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          state.token = data.access_token;
+          sessionStorage.setItem(LS_TOKEN, state.token);
+          setAuthUI();
+          toast("로그인 성공", `${username}님 환영합니다.`);
+          await loadTodos();
+        } catch (e) {
+          toast("로그인 실패", String(e?.message || e));
+        } finally { els.loginBtn.disabled = false; }
+      };
 
-          const doneCount = all.filter((t) => t.done).length;
-          els.stats.textContent = `${all.length}개 · 완료 ${doneCount}개`;
+      const doRegister = async () => {
+        const username = els.username.value.trim();
+        const password = els.password.value;
+        if (!username || !password) { toast("입력 필요", "아이디와 비밀번호를 입력해주세요."); return; }
+        els.registerBtn.disabled = true;
+        try {
+          await api("/auth/register", { method: "POST", body: JSON.stringify({ username, password }) });
+          toast("회원가입 완료", "로그인해주세요.");
+        } catch (e) {
+          toast("회원가입 실패", String(e?.message || e));
+        } finally { els.registerBtn.disabled = false; }
+      };
 
-          els.list.innerHTML = "";
-          els.emptyHint.style.display = all.length ? "none" : "block";
+      const doLogout = () => {
+        state.token = null;
+        state.todos = [];
+        state.selectedId = null;
+        sessionStorage.removeItem(LS_TOKEN);
+        setAuthUI();
+        renderSidebar();
+        showEmpty();
+        toast("로그아웃 완료", "");
+      };
 
-          for (const t of visible) {
-            const item = document.createElement("div");
-            item.className = "item";
-
-            const check = document.createElement("button");
-            check.type = "button";
-            check.className = "check";
-            check.setAttribute("aria-label", t.done ? "완료 해제" : "완료");
-            check.dataset.done = String(!!t.done);
-            check.textContent = t.done ? "✓" : "";
-            check.addEventListener("click", () => onToggle(t));
-
-            const content = document.createElement("div");
-            content.className = "content";
-
-            const line1 = document.createElement("div");
-            line1.className = "line1";
-
-            const title = document.createElement("div");
-            title.className = "item-title" + (t.done ? " done" : "");
-            title.textContent = t.title;
-
-            const meta = document.createElement("div");
-            meta.className = "meta";
-            const ca = fmtDate(t.created_at);
-            const ua = fmtDate(t.updated_at);
-            meta.textContent = `#${t.id}${ca ? ` · 생성 ${ca}` : ""}${
-              ua && ua !== ca ? ` · 수정 ${ua}` : ""
-            }`;
-
-            line1.appendChild(title);
-            line1.appendChild(meta);
-            content.appendChild(line1);
-
-            if (t.description) {
-              const desc = document.createElement("div");
-              desc.className = "desc";
-              desc.textContent = t.description;
-              content.appendChild(desc);
-            }
-
-            const actions = document.createElement("div");
-            actions.className = "actions";
-
-            const badge = document.createElement("div");
-            badge.className = "badge";
-            badge.textContent = t.done ? "완료" : "진행 중";
-
-            const del = document.createElement("button");
-            del.type = "button";
-            del.className = "danger";
-            del.textContent = "삭제";
-            del.addEventListener("click", () => onDelete(t));
-
-            actions.appendChild(badge);
-            actions.appendChild(del);
-
-            item.appendChild(check);
-            item.appendChild(content);
-            item.appendChild(actions);
-
-            els.list.appendChild(item);
+      // ── LOAD ──
+      const loadTodos = async () => {
+        if (!state.token) {
+          state.todos = [];
+          renderSidebar();
+          showEmpty();
+          setNet(false, "로그인 필요");
+          return;
+        }
+        try {
+          const todos = await api("/todos", { method: "GET" });
+          state.todos = Array.isArray(todos) ? todos : [];
+          setNet(true, "연결됨");
+          renderSidebar();
+          // re-render detail if selected
+          if (state.selectedId !== null) {
+            const t = state.todos.find(x => x.id === state.selectedId);
+            if (t) renderDetail(t); else showEmpty();
           }
-        };
+          updateStats();
+        } catch (e) {
+          setNet(false, "연결 실패");
+          toast("API 연결 실패", String(e?.message || e));
+        }
+      };
 
-        const loadTodos = async () => {
-          state.loading = true;
-          els.refreshBtn.disabled = true;
-          if (!state.token) {
-            els.stats.textContent = "0개";
-            els.list.innerHTML = "";
-            els.emptyHint.style.display = "block";
-            setNet(false, "로그인 필요");
-            return;
-          }
-          try {
-            const todos = await api("/todos", { method: "GET" });
-            state.todos = Array.isArray(todos) ? todos : [];
-            setNet(true, "연결됨");
-          } catch (e) {
-            setNet(false, "연결 실패");
-            toast(
-              "API 연결 실패",
-              `서버가 실행 중인지 확인하세요. (기본: ${DEFAULT_API_BASE})\n\n${String(
-                e?.message || e
-              )}`
-            );
-          } finally {
-            state.loading = false;
-            els.refreshBtn.disabled = false;
-            render();
-          }
-        };
+      // ── SIDEBAR RENDER ──
+      const renderSidebar = () => {
+        const filtered = state.todos.filter(t => {
+          if (state.filter === "active") return !t.done;
+          if (state.filter === "done") return !!t.done;
+          return true;
+        }).sort((a, b) => a.id - b.id);
 
-        const onCreate = async (ev) => {
-          ev.preventDefault();
-          if (!state.token) {
-            toast("로그인이 필요합니다", "할 일을 추가하려면 먼저 로그인 해주세요.");
-            return;
-          }
-          const title = els.title.value.trim();
-          const descriptionRaw = els.description.value.trim();
-          const description = descriptionRaw.length ? descriptionRaw : null;
-          if (!title) return;
+        els.navList.innerHTML = "";
+        for (const t of filtered) {
+          const item = document.createElement("div");
+          item.className = "todo-nav-item" + (t.done ? " done-item" : "") + (t.id === state.selectedId ? " active" : "");
 
-          els.addBtn.disabled = true;
-          try {
-            await api("/todos", {
-              method: "POST",
-              body: JSON.stringify({ title, description }),
-            });
-            els.title.value = "";
-            els.description.value = "";
-            els.title.focus();
-            await loadTodos();
-          } catch (e) {
-            toast("추가 실패", String(e?.message || e));
-          } finally {
-            els.addBtn.disabled = false;
-          }
-        };
+          const chk = document.createElement("div");
+          chk.className = "nav-check";
+          chk.textContent = t.done ? "✓" : "";
 
-        const onAiSteps = async () => {
-          if (!state.token) {
-            toast("로그인이 필요합니다", "AI 단계를 생성하려면 먼저 로그인 해주세요.");
-            return;
-          }
-          const title = els.title.value.trim();
-          if (!title) {
-            toast("제목이 필요해요", "먼저 제목을 입력한 뒤 AI 단계를 생성해보세요.");
-            els.title.focus();
-            return;
-          }
+          const lbl = document.createElement("div");
+          lbl.className = "nav-item-title";
+          lbl.textContent = t.title || "제목 없음";
 
-          els.aiStepsBtn.disabled = true;
-          try {
-            const out = await api("/todos/ai-steps", {
-              method: "POST",
-              body: JSON.stringify({ title }),
-            });
+          const del = document.createElement("button");
+          del.className = "nav-del-btn";
+          del.textContent = "✕";
+          del.title = "삭제";
+          del.addEventListener("click", e => { e.stopPropagation(); onDelete(t); });
 
-            const steps = Array.isArray(out?.steps) ? out.steps : [];
-            if (!steps.length) throw new Error("AI 응답에 steps가 없어요.");
+          item.appendChild(chk);
+          item.appendChild(lbl);
+          item.appendChild(del);
 
-            const formatted = steps
-              .slice(0, 5)
-              .map((s, i) => `${i + 1}. ${String(s).trim()}`)
-              .join("\n");
+          item.addEventListener("click", () => selectTodo(t));
+          els.navList.appendChild(item);
+        }
 
-            els.description.value = formatted;
-            els.description.focus();
-          } catch (e) {
-            toast("AI 단계 생성 실패", String(e?.message || e));
-          } finally {
-            els.aiStepsBtn.disabled = false;
-          }
-        };
+        updateStats();
+      };
 
-        const onToggle = async (todo) => {
-          if (!state.token) {
-            toast("로그인이 필요합니다", "완료 상태를 변경하려면 먼저 로그인 해주세요.");
-            return;
-          }
-          const nextDone = !todo.done;
-          // optimistic update
-          const prev = state.todos.slice();
-          state.todos = state.todos.map((t) =>
-            t.id === todo.id ? { ...t, done: nextDone } : t
-          );
-          render();
+      const updateStats = () => {
+        const all = state.todos;
+        const done = all.filter(t => t.done).length;
+        els.statsText.textContent = `총 ${all.length}개 · 완료 ${done}개 · 진행 중 ${all.length - done}개`;
+      };
 
-          try {
-            const updated = await api(`/todos/${todo.id}`, {
-              method: "PATCH",
-              body: JSON.stringify({ done: nextDone }),
-            });
-            state.todos = state.todos.map((t) => (t.id === todo.id ? updated : t));
-            render();
-          } catch (e) {
-            state.todos = prev;
-            render();
-            toast("완료 처리 실패", String(e?.message || e));
-          }
-        };
+      // ── VIEWS ──
+      const showEmpty = () => {
+        els.emptyState.style.display = "";
+        els.detailView.classList.remove("visible");
+        els.newPanel.classList.remove("visible");
+        els.topbarCrumb.textContent = "할 일 선택";
+        state.selectedId = null;
+      };
 
-        const onDelete = async (todo) => {
-          if (!state.token) {
-            toast("로그인이 필요합니다", "삭제하려면 먼저 로그인 해주세요.");
-            return;
-          }
-          const ok = confirm(`삭제할까요?\n\n#${todo.id} ${todo.title}`);
-          if (!ok) return;
+      const showNewPanel = () => {
+        els.emptyState.style.display = "none";
+        els.detailView.classList.remove("visible");
+        els.newPanel.classList.add("visible");
+        els.topbarCrumb.textContent = "새 페이지";
+        state.selectedId = null;
+        els.newTitle.value = "";
+        els.newDesc.value = "";
+        els.newTitle.focus();
+        renderSidebar();
+      };
 
-          const prev = state.todos.slice();
-          state.todos = state.todos.filter((t) => t.id !== todo.id);
-          render();
+      const selectTodo = (t) => {
+        state.selectedId = t.id;
+        state.dirty = false;
+        els.emptyState.style.display = "none";
+        els.newPanel.classList.remove("visible");
+        els.detailView.classList.add("visible");
+        renderDetail(t);
+        renderSidebar();
+      };
 
-          try {
-            await api(`/todos/${todo.id}`, { method: "DELETE" });
-          } catch (e) {
-            state.todos = prev;
-            render();
-            toast("삭제 실패", String(e?.message || e));
-          }
-        };
+      const renderDetail = (t) => {
+        // done toggle
+        els.bigCheck.className = "big-check" + (t.done ? " done" : "");
+        els.bigCheck.textContent = t.done ? "✓" : "";
+        els.doneLabel.textContent = t.done ? "완료됨" : "완료로 표시";
 
-        const checkHealth = async () => {
-          try {
-            await api("/health", { method: "GET" });
-            setNet(true, "연결됨");
-          } catch {
-            setNet(false, "연결 실패");
-          }
-        };
+        // title
+        els.detailTitle.value = t.title || "";
+        els.detailTitle.className = "detail-title-input" + (t.done ? " done-title" : "");
+        autoResize(els.detailTitle);
 
-        const doLogin = async () => {
-          const username = els.username.value.trim();
-          const password = els.password.value;
-          if (!username || !password) {
-            toast("입력이 필요합니다", "아이디와 비밀번호를 모두 입력해 주세요.");
-            return;
-          }
-          els.loginBtn.disabled = true;
-          try {
-            const body = new URLSearchParams();
-            body.set("username", username);
-            body.set("password", password);
-            body.set("grant_type", "password");
-            const url = state.apiBase + "/auth/login";
-            const res = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/x-www-form-urlencoded" },
-              body,
-            });
-            if (!res.ok) {
-              throw new Error(`HTTP ${res.status}`);
-            }
-            const data = await res.json();
-            state.token = data.access_token;
-            sessionStorage.setItem(LS_TOKEN, state.token);
-            setAuthStatus();
-            toast("로그인 성공", `${username}님 환영합니다.`);
-            await checkHealth().finally(loadTodos);
-          } catch (e) {
-            toast("로그인 실패", String(e?.message || e));
-          } finally {
-            els.loginBtn.disabled = false;
-          }
-        };
+        // meta
+        const ca = fmtDate(t.created_at);
+        const ua = fmtDate(t.updated_at);
+        els.detailMeta.innerHTML = `
+          <span>#${t.id}</span>
+          ${ca ? `<span>생성 ${ca}</span>` : ""}
+          ${ua && ua !== ca ? `<span>수정 ${ua}</span>` : ""}
+        `;
 
-        const doRegister = async () => {
-          const username = els.username.value.trim();
-          const password = els.password.value;
-          if (!username || !password) {
-            toast("입력이 필요합니다", "아이디와 비밀번호를 모두 입력해 주세요.");
-            return;
-          }
-          els.registerBtn.disabled = true;
-          try {
-            await api("/auth/register", {
-              method: "POST",
-              body: JSON.stringify({ username, password }),
-            });
-            toast("회원가입 완료", "이제 같은 아이디와 비밀번호로 로그인해 주세요.");
-          } catch (e) {
-            toast("회원가입 실패", String(e?.message || e));
-          } finally {
-            els.registerBtn.disabled = false;
-          }
-        };
+        // desc
+        els.detailDesc.value = t.description || "";
+        autoResize(els.detailDesc);
 
-        const doLogout = () => {
-          state.token = null;
-          sessionStorage.removeItem(LS_TOKEN);
-          setAuthStatus();
-          els.list.innerHTML = "";
-          els.stats.textContent = "0개";
-          els.emptyHint.style.display = "block";
-          toast("로그아웃 완료", "다시 로그인하면 내 할 일을 볼 수 있습니다.");
-        };
+        els.topbarCrumb.textContent = t.title || "제목 없음";
+        state.dirty = false;
+        els.saveHint.classList.remove("visible");
+      };
 
-        // wire up
-        els.toastClose.addEventListener("click", hideToast);
-        els.createForm.addEventListener("submit", onCreate);
-        els.aiStepsBtn.addEventListener("click", onAiSteps);
-        els.refreshBtn.addEventListener("click", loadTodos);
-        els.loginBtn.addEventListener("click", doLogin);
-        els.registerBtn.addEventListener("click", doRegister);
-        els.logoutBtn.addEventListener("click", doLogout);
-        els.filter.addEventListener("change", (e) => {
-          state.filter = e.target.value;
-          render();
+      const autoResize = el => {
+        el.style.height = "auto";
+        el.style.height = el.scrollHeight + "px";
+      };
+
+      // ── DETAIL ACTIONS ──
+      els.doneToggle.addEventListener("click", async () => {
+        const t = state.todos.find(x => x.id === state.selectedId);
+        if (!t) return;
+        const nextDone = !t.done;
+        const prev = state.todos.slice();
+        state.todos = state.todos.map(x => x.id === t.id ? { ...x, done: nextDone } : x);
+        renderDetail({ ...t, done: nextDone });
+        renderSidebar();
+        try {
+          const updated = await api(`/todos/${t.id}`, { method: "PATCH", body: JSON.stringify({ done: nextDone }) });
+          state.todos = state.todos.map(x => x.id === t.id ? updated : x);
+          renderDetail(updated);
+        } catch (e) {
+          state.todos = prev;
+          renderDetail(t);
+          renderSidebar();
+          toast("실패", String(e?.message || e));
+        }
+      });
+
+      els.detailTitle.addEventListener("input", () => {
+        autoResize(els.detailTitle);
+        state.dirty = true;
+        els.saveHint.classList.add("visible");
+      });
+
+      els.detailDesc.addEventListener("input", () => {
+        autoResize(els.detailDesc);
+        state.dirty = true;
+        els.saveHint.classList.add("visible");
+      });
+
+      els.saveBtn.addEventListener("click", saveDetail);
+      document.addEventListener("keydown", e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          if (state.selectedId !== null) saveDetail();
+        }
+      });
+
+      async function saveDetail() {
+        const t = state.todos.find(x => x.id === state.selectedId);
+        if (!t) return;
+        const title = els.detailTitle.value.trim();
+        const description = els.detailDesc.value.trim() || null;
+        if (!title) { toast("제목 필요", "제목을 입력해주세요."); return; }
+        els.saveBtn.disabled = true;
+        try {
+          const updated = await api(`/todos/${t.id}`, { method: "PATCH", body: JSON.stringify({ title, description }) });
+          state.todos = state.todos.map(x => x.id === t.id ? updated : x);
+          renderDetail(updated);
+          renderSidebar();
+          state.dirty = false;
+          els.saveHint.classList.remove("visible");
+          toast("저장됨", "");
+        } catch (e) {
+          toast("저장 실패", String(e?.message || e));
+        } finally { els.saveBtn.disabled = false; }
+      }
+
+      els.aiStepsBtn.addEventListener("click", () => runAiSteps(els.detailTitle, els.detailDesc, els.aiStepsBtn));
+      els.newAiBtn.addEventListener("click", () => runAiSteps(els.newTitle, els.newDesc, els.newAiBtn));
+
+      async function runAiSteps(titleEl, descEl, btn) {
+        if (!state.token) { toast("로그인 필요", ""); return; }
+        const title = titleEl.value.trim();
+        if (!title) { toast("제목 필요", "먼저 제목을 입력해주세요."); titleEl.focus(); return; }
+        btn.disabled = true;
+        try {
+          const out = await api("/todos/ai-steps", { method: "POST", body: JSON.stringify({ title }) });
+          const steps = Array.isArray(out?.steps) ? out.steps : [];
+          if (!steps.length) throw new Error("AI 응답에 steps가 없어요.");
+          descEl.value = steps.slice(0, 5).map((s, i) => `${i + 1}. ${String(s).trim()}`).join("\n");
+          autoResize(descEl);
+          descEl.focus();
+          if (state.selectedId !== null) { state.dirty = true; els.saveHint.classList.add("visible"); }
+        } catch (e) {
+          toast("AI 단계 생성 실패", String(e?.message || e));
+        } finally { btn.disabled = false; }
+      }
+
+      const onDelete = async (todo) => {
+        if (!state.token) { toast("로그인 필요", ""); return; }
+        if (!confirm(`삭제할까요?\n\n${todo.title}`)) return;
+        const prev = state.todos.slice();
+        state.todos = state.todos.filter(t => t.id !== todo.id);
+        if (state.selectedId === todo.id) showEmpty();
+        renderSidebar();
+        try {
+          await api(`/todos/${todo.id}`, { method: "DELETE" });
+        } catch (e) {
+          state.todos = prev;
+          renderSidebar();
+          toast("삭제 실패", String(e?.message || e));
+        }
+      };
+
+      els.deleteBtn.addEventListener("click", () => {
+        const t = state.todos.find(x => x.id === state.selectedId);
+        if (t) onDelete(t);
+      });
+
+      // ── NEW TODO ──
+      els.newTodoBtn.addEventListener("click", () => {
+        if (!state.token) { toast("로그인 필요", "로그인 후 할 일을 추가할 수 있습니다."); return; }
+        showNewPanel();
+      });
+
+      els.cancelNewBtn.addEventListener("click", showEmpty);
+
+      els.addBtn.addEventListener("click", async () => {
+        if (!state.token) { toast("로그인 필요", ""); return; }
+        const title = els.newTitle.value.trim();
+        const description = els.newDesc.value.trim() || null;
+        if (!title) { toast("제목 필요", "제목을 입력해주세요."); return; }
+        els.addBtn.disabled = true;
+        try {
+          const created = await api("/todos", { method: "POST", body: JSON.stringify({ title, description }) });
+          await loadTodos();
+          selectTodo(created);
+        } catch (e) {
+          toast("추가 실패", String(e?.message || e));
+        } finally { els.addBtn.disabled = false; }
+      });
+
+      // ── FILTER ──
+      els.filterTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          els.filterTabs.forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          state.filter = tab.dataset.filter;
+          renderSidebar();
         });
+      });
 
-        // api base persistence
-        const savedBase = sessionStorage.getItem(LS_API_BASE);
-        state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
-        els.apiBase.value = state.apiBase;
-        state.token = sessionStorage.getItem(LS_TOKEN);
-        setAuthStatus();
+      // ── REFRESH ──
+      els.refreshBtn.addEventListener("click", loadTodos);
 
-        const applyApiBase = () => {
-          const v = sanitizeBase(els.apiBase.value);
-          state.apiBase = v;
-          els.apiBase.value = v;
-          sessionStorage.setItem(LS_API_BASE, v);
-          checkHealth().finally(loadTodos);
-        };
+      // ── API BASE ──
+      const savedBase = sessionStorage.getItem(LS_API_BASE);
+      state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
+      els.apiBase.value = state.apiBase;
 
-        let baseTimer = null;
-        els.apiBase.addEventListener("input", () => {
-          clearTimeout(baseTimer);
-          baseTimer = setTimeout(applyApiBase, 400);
-        });
-        els.apiBase.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            applyApiBase();
-          }
-        });
+      let baseTimer = null;
+      els.apiBase.addEventListener("input", () => {
+        clearTimeout(baseTimer);
+        baseTimer = setTimeout(() => {
+          state.apiBase = sanitizeBase(els.apiBase.value);
+          els.apiBase.value = state.apiBase;
+          sessionStorage.setItem(LS_API_BASE, state.apiBase);
+          checkHealth().then(loadTodos);
+        }, 400);
+      });
 
-        // init
-        checkHealth().finally(loadTodos);
-      })();
+      // ── AUTH EVENTS ──
+      els.loginBtn.addEventListener("click", doLogin);
+      els.registerBtn.addEventListener("click", doRegister);
+      els.logoutBtn.addEventListener("click", doLogout);
+      els.username.addEventListener("keydown", e => { if (e.key === "Enter") els.password.focus(); });
+      els.password.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+      // ── INIT ──
+      state.token = sessionStorage.getItem(LS_TOKEN);
+      setAuthUI();
+      checkHealth().then(loadTodos);
+    })();
     </script>
   </body>
 </html>

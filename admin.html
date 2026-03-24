@@ -883,7 +883,7 @@
         const savedBase = sessionStorage.getItem(LS_API_BASE);
         state.apiBase = sanitizeBase(savedBase || DEFAULT_API_BASE);
         els.apiBase.value = state.apiBase;
-        state.token = sessionStorage.getItem(LS_TOKEN);
+        state.token = localStorage.getItem(LS_TOKEN);
 
         let baseTimer = null;
         const applyApiBase = () => {

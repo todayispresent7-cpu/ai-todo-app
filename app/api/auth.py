@@ -24,7 +24,7 @@ def _get_secret_key() -> str:
 
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 # 1시간
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
